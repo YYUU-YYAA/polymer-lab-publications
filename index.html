@@ -204,7 +204,7 @@ main { max-width: 1400px; margin: 0 auto; padding: 28px 24px 60px; }
 .ai-run-btn { background: #6366f1; color: white; border: none; border-radius: var(--radius-sm); padding: 10px 20px; font-size: 14px; font-weight: 600; cursor: pointer; white-space: nowrap; }
 .ai-run-btn:hover { background: #4f46e5; }
 
-/* Area tree */
+/* Area tree (研究分野タブ) */
 .area-tree-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; margin-bottom: 28px; }
 .area-tree-node { background: var(--white); border-radius: var(--radius); padding: 16px; border: 1px solid var(--border); }
 .area-tree-header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; font-size: 15px; font-weight: 700; color: var(--text); }
@@ -213,6 +213,21 @@ main { max-width: 1400px; margin: 0 auto; padding: 28px 24px 60px; }
 .area-tree-tags { display: flex; flex-wrap: wrap; gap: 5px; }
 .area-tree-tag { font-size: 12px; padding: 3px 9px; border-radius: 12px; cursor: pointer; border: 1px solid var(--border); background: #f8fafc; color: #475569; transition: all 0.12s; }
 .area-tree-tag:hover { color: white; border-color: transparent; }
+
+/* Dashboard area accordion tree */
+.atd-wrap { display: flex; flex-direction: column; gap: 7px; }
+.atd-node { border-radius: 8px; border: 1px solid var(--border); overflow: hidden; background: var(--white); }
+.atd-header { display: flex; align-items: center; gap: 9px; padding: 11px 14px; cursor: pointer; user-select: none; transition: background 0.12s; }
+.atd-header:hover { background: #f1f5f9; }
+.atd-hdot { width: 11px; height: 11px; border-radius: 50%; flex-shrink: 0; }
+.atd-hlabel { font-weight: 700; font-size: 14px; color: var(--text); flex: 1; }
+.atd-hcount { font-size: 12px; color: var(--text-light); font-weight: 500; }
+.atd-harrow { font-size: 9px; color: var(--text-light); transition: transform 0.2s; flex-shrink: 0; }
+.atd-node.open .atd-harrow { transform: rotate(90deg); }
+.atd-body { display: none; flex-wrap: wrap; gap: 5px; padding: 10px 14px 13px; border-top: 1px solid var(--border); }
+.atd-node.open .atd-body { display: flex; }
+.atd-tag { font-size: 12px; padding: 3px 8px; border-radius: 10px; cursor: pointer; border: 1px solid var(--border); background: #f8fafc; color: #475569; transition: all 0.12s; white-space: nowrap; }
+.atd-tag em { font-style: normal; font-size: 11px; color: #94a3b8; }
 
 /* Section title */
 .section-title { font-size: 20px; font-weight: 700; margin-bottom: 20px; color: var(--text); padding-bottom: 10px; border-bottom: 2px solid var(--border); }
@@ -538,7 +553,7 @@ main { max-width: 1400px; margin: 0 auto; padding: 28px 24px 60px; }
           📥 HTMLに統合 <span id="merge-count" class="merge-badge">0</span>
         </button>
         <button class="btn-gh-setup" id="btn-gh-setup" onclick="openGitHubSettings()">⚙️ GitHub連携設定</button>
-        <div class="action-note" style="font-size:11px;color:#64748b;line-height:1.6;background:#f8fafc;border:1px solid var(--border);border-radius:6px;padding:7px 10px;margin-top:2px"><div>📝 論文を追加すると管理者がGitHubに反映することでwebページが書き換わります。</div><div style="margin-top:4px;padding-top:4px;border-top:1px solid var(--border)">📦 <strong>一括論文取り込み</strong>は管理者にご連絡ください。</div></div>
+        <div class="action-note" style="font-size:11px;color:#64748b;line-height:1.6;background:#f8fafc;border:1px solid var(--border);border-radius:6px;padding:7px 10px;margin-top:2px"><div>📝 パスワードを知っている方は論文の追加・編集ができます。「GitHubに反映」を押すとwebページが全員に更新されます。</div><div style="margin-top:4px;padding-top:4px;border-top:1px solid var(--border)">📦 <strong>一括論文取り込み</strong>は管理者にご連絡ください。</div></div>
       </div>
     </div>
 
@@ -551,8 +566,7 @@ main { max-width: 1400px; margin: 0 auto; padding: 28px 24px 60px; }
         </div>
         <div class="chart-card">
           <h3>🔬 研究分野別論文数</h3>
-          <div class="chart-hint">セグメントをクリックすると右側にその分野の論文が表示されます</div>
-          <canvas id="chart-areas"></canvas>
+          <div id="area-tree-dash" class="atd-wrap"></div>
         </div>
       </div>
       <div class="dash-side" id="dash-side">
@@ -628,8 +642,7 @@ main { max-width: 1400px; margin: 0 auto; padding: 28px 24px 60px; }
     </div>
     <div class="section-title">🌿 研究テーマ 分類ツリー</div>
     <div id="area-tree-section" class="area-tree-grid"></div>
-    <div class="section-title">🔬 研究分野別 論文一覧</div>
-    <div class="areas-grid" id="areas-grid"></div>
+    <div class="areas-grid" id="areas-grid" style="display:none"></div>
     <div id="area-detail-section" style="display:none;margin-top:28px">
       <div class="section-title" id="area-detail-title"></div>
       <div class="papers-grid" id="area-papers-grid"></div>
@@ -1450,26 +1463,7 @@ function initCharts() {
     }
   });
 
-  const areaCounts = {};
-  ORIG.forEach(p=>{ areaCounts[p.area]=(areaCounts[p.area]||0)+1; });
-  const areaKeys = Object.keys(AREA_DEFS);
-  charts.areas = new Chart(document.getElementById('chart-areas'),{
-    type:'doughnut',
-    data:{
-      labels: areaKeys.map(k=>AREA_DEFS[k].label),
-      datasets:[{data:areaKeys.map(k=>areaCounts[k]||0), backgroundColor:areaKeys.map(k=>AREA_DEFS[k].color), borderWidth:2, borderColor:'#fff'}]
-    },
-    options:{
-      responsive:true,
-      plugins:{legend:{position:'right',labels:{font:{size:11}}}},
-      onClick(_,els){
-        if(!els.length) return;
-        const areaKey = areaKeys[els[0].index];
-        const ps = ORIG.filter(p=>p.area===areaKey);
-        showDashSide(`🔬 ${AREA_DEFS[areaKey].label}（${ps.length}件）`, ps);
-      }
-    }
-  });
+  // chart-areas replaced by renderDashAreaTree()
 
   const areaList = Object.keys(AREA_DEFS);
   charts.trend = new Chart(document.getElementById('chart-trend'),{
@@ -1657,6 +1651,34 @@ function goToTag(tag){
   renderTagChips();
   filterPapers();
   setTimeout(()=>document.getElementById('papers-grid')?.scrollIntoView({behavior:'smooth',block:'start'}),150);
+}
+function renderDashAreaTree(){
+  const sec=document.getElementById('area-tree-dash');
+  if(!sec)return;
+  sec.innerHTML=Object.entries(AREA_DEFS).map(([aKey,aDef])=>{
+    const areaPapers=ORIG.filter(p=>p.area===aKey);
+    const tagCnt={};
+    areaPapers.forEach(p=>p.tags.forEach(t=>{tagCnt[t]=(tagCnt[t]||0)+1;}));
+    const sortedTags=Object.entries(tagCnt).sort((a,b)=>b[1]-a[1]);
+    const tagHTML=sortedTags.map(([t,cnt])=>{
+      const safeT=t.replace(/\x27/g,"\\\\'");
+      return '<span class="atd-tag" '
+        +'onmouseover="this.style.background=\''+aDef.color+'\';this.style.color=\'white\';this.style.borderColor=\''+aDef.color+'\'" '
+        +'onmouseout="this.style.background=\'\';this.style.color=\'\';this.style.borderColor=\'\'" '
+        +'onclick="goToTag(\''+safeT+'\')">'
+        +t+' <em>'+cnt+'</em></span>';
+    }).join('');
+    const pct=Math.round(areaPapers.length/ORIG.length*100);
+    return '<div class="atd-node" id="atd-'+aKey+'">'
+      +'<div class="atd-header" onclick="this.closest(\'.atd-node\').classList.toggle(\'open\')">'
+      +'<span class="atd-hdot" style="background:'+aDef.color+'"></span>'
+      +'<span class="atd-hlabel">'+aDef.label+'</span>'
+      +'<span class="atd-hcount">'+areaPapers.length+'件 ('+pct+'%)</span>'
+      +'<span class="atd-harrow">▶</span>'
+      +'</div>'
+      +'<div class="atd-body">'+tagHTML+'</div>'
+      +'</div>';
+  }).join('');
 }
 function renderAreaTree(){
   const sec=document.getElementById('area-tree-section');
@@ -2608,6 +2630,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   filterPapers();
   renderAreas();
   renderAreaTree();
+  renderDashAreaTree();
   renderTagCards();
   renderAuthors();
   renderJournalTable();
