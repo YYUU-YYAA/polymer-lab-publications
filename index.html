@@ -73,7 +73,7 @@ main { max-width: 1400px; margin: 0 auto; padding: 28px 24px 60px; }
 .tab-content.active { display: block; }
 
 /* Stat cards */
-.stats-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; margin-bottom: 24px; }
+.stats-grid { display: grid; grid-template-columns: repeat(5, 1fr) 220px; gap: 16px; margin-bottom: 24px; }
 .stat-card {
   background: var(--white); border-radius: var(--radius); padding: 20px 24px;
   box-shadow: var(--shadow); border: 1px solid var(--border);
@@ -204,6 +204,9 @@ main { max-width: 1400px; margin: 0 auto; padding: 28px 24px 60px; }
 .btn-fav { background: #fef3c7; color: #b45309; }
 .btn-fav.active { background: #f59e0b; color: white; }
 .btn-clear { background: #fee2e2; color: #dc2626; }
+.btn-merge { background: #fff7ed; color: #c2410c; border: 1.5px solid #fed7aa; }
+.btn-merge:hover { background: #ffedd5; }
+.merge-badge { display: inline-flex; align-items: center; justify-content: center; background: #ea580c; color: #fff; border-radius: 10px; font-size: 11px; font-weight: 700; min-width: 18px; height: 18px; padding: 0 5px; margin-left: 4px; }
 .chart-hint { font-size: 11px; color: var(--text-light); margin-bottom: 8px; font-style: italic; }
 
 /* Dashboard split layout */
@@ -275,6 +278,9 @@ main { max-width: 1400px; margin: 0 auto; padding: 28px 24px 60px; }
 .empty-state div { font-size: 48px; margin-bottom: 12px; }
 
 /* Responsive */
+@media(max-width:1100px) {
+  .stats-grid { grid-template-columns: repeat(3, 1fr); }
+}
 @media(max-width:900px) {
   .stats-grid { grid-template-columns: repeat(2,1fr); }
   .charts-grid { grid-template-columns: 1fr; }
@@ -447,6 +453,15 @@ main { max-width: 1400px; margin: 0 auto; padding: 28px 24px 60px; }
         <div class="stat-icon">👥</div>
         <div><div class="stat-val" id="s-authors">—</div><div class="stat-lbl">著者</div></div>
       </div>
+      <!-- 操作カード -->
+      <div class="stat-card action-card" style="flex-direction:column;align-items:stretch;gap:8px;cursor:default" onclick="">
+        <button class="btn btn-primary" style="width:100%;font-size:12px;padding:8px" onclick="openAddModal()">＋ 論文追加</button>
+        <button class="btn btn-merge hidden" id="btn-merge" style="width:100%;font-size:12px;padding:8px" onclick="downloadMergedHTML()">📥 HTMLに統合 <span id="merge-count" class="merge-badge">0</span></button>
+        <div style="font-size:10px;color:#94a3b8;line-height:1.5;margin-top:2px">
+          ⚠️ 統合するとWebページが<br>書き換わります<br>
+          🔖 お気に入りはあなたの<br>ブラウザにのみ保存
+        </div>
+      </div>
     </div>
 
     <div class="dash-layout">
@@ -489,7 +504,6 @@ main { max-width: 1400px; margin: 0 auto; padding: 28px 24px 60px; }
       <select id="filter-area"><option value="">全分野</option></select>
       <button class="btn btn-fav" id="btn-fav-filter" onclick="toggleFavFilter()">🔖 お気に入り</button>
       <button class="btn btn-clear" onclick="clearFilters()">✕ クリア</button>
-      <button class="btn btn-primary" onclick="openAddModal()">＋ 論文追加</button>
     </div>
     <div id="tag-chips-row" class="tag-chips-row"></div>
     <div class="paper-count" id="paper-count"></div>
@@ -995,6 +1009,7 @@ const RAW = [
 // ---- 2011 ----
 [2011,'R','バイオプラを訪ねて、東京大学・岩田研究室','Iwata T','バイオプラジャーナル','42:14-19',''],
 [2011,'R','微生物産生ポリエステルの高効率的生産と高性能化','Iwata T, Tsuge J','ケミカルエンジニアリング','56(6):59-65',''],
+// ── USER_PAPERS_INSERT ──
 ];
 
 // ─────────────────────────────────────────────
@@ -1634,6 +1649,91 @@ function toggleFav(id, btn) {
 // ─────────────────────────────────────────────
 // ADD PAPER
 // ─────────────────────────────────────────────
+// ─────────────────────────────────────────────
+// MERGE BADGE
+// ─────────────────────────────────────────────
+function updateMergeBadge() {
+  const stored = JSON.parse(localStorage.getItem('polymer_papers') || '[]');
+  const btn = document.getElementById('btn-merge');
+  const cnt = document.getElementById('merge-count');
+  if (stored.length > 0) {
+    btn.classList.remove('hidden');
+    cnt.textContent = stored.length;
+  } else {
+    btn.classList.add('hidden');
+  }
+}
+
+// ─────────────────────────────────────────────
+// MERGE & DOWNLOAD
+// ─────────────────────────────────────────────
+async function downloadMergedHTML() {
+  const stored = JSON.parse(localStorage.getItem('polymer_papers') || '[]');
+  if (stored.length === 0) { alert('統合する論文がありません。'); return; }
+
+  const list = stored.map((r, i) => `  ${i+1}. [${r[0]}] ${r[2]}\n     著者: ${r[3]}  誌: ${r[4]}`).join('\n\n');
+  const ok = confirm(
+    `以下の ${stored.length} 件をHTMLに統合してダウンロードします。\n\n${list}\n\n` +
+    `ダウンロード後、このファイルをGitHubにアップロードしてください。\n続けますか？`
+  );
+  if (!ok) return;
+
+  try {
+    const btn = document.getElementById('btn-merge');
+    btn.textContent = '⏳ 処理中...';
+    btn.disabled = true;
+
+    const response = await fetch(location.href, { cache: 'reload' });
+    if (!response.ok) throw new Error('ページの取得に失敗しました');
+    let html = await response.text();
+
+    const MARKER = '// ── USER_PAPERS_INSERT ──';
+    if (!html.includes(MARKER)) throw new Error('マーカーが見つかりません。ページを再読み込みしてください。');
+
+    // RAW配列フォーマットに変換（特殊文字をエスケープ）
+    const esc = s => String(s || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+    const newLines = stored.map(r =>
+      `[${r[0]},'${esc(r[1])}','${esc(r[2])}','${esc(r[3])}','${esc(r[4])}','${esc(r[5])}','${esc(r[6])}'],`
+    ).join('\n');
+
+    html = html.replace(MARKER, newLines + '\n' + MARKER);
+
+    // ダウンロード
+    const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'index.html';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+
+    // localStorageをクリア
+    localStorage.removeItem('polymer_papers');
+    updateMergeBadge();
+
+    alert(
+      `✅ ダウンロード完了！\n\n` +
+      `次のステップ：\n` +
+      `1. GitHubのリポジトリを開く\n` +
+      `2. index.html をクリック → 編集ボタン（鉛筆アイコン）→ 右上の「…」→「Upload file」\n` +
+      `3. ダウンロードしたindex.htmlをアップロード\n` +
+      `4. 「Commit changes」をクリック\n\n` +
+      `しばらく待つと全員に反映されます。`
+    );
+
+  } catch (e) {
+    alert('エラー: ' + e.message);
+  } finally {
+    const btn = document.getElementById('btn-merge');
+    if (btn) {
+      btn.innerHTML = '📥 HTMLに統合 <span id="merge-count" class="merge-badge">' +
+        (JSON.parse(localStorage.getItem('polymer_papers')||'[]').length) + '</span>';
+      btn.disabled = false;
+    }
+  }
+}
+
 function openAddModal() { document.getElementById('add-modal').classList.remove('hidden'); }
 function savePaper() {
   const yr=parseInt(document.getElementById('add-year').value);
@@ -1648,7 +1748,8 @@ function savePaper() {
   stored.push([yr,tp,ti,au,jo,vo,doi]);
   localStorage.setItem('polymer_papers',JSON.stringify(stored));
   document.getElementById('add-modal').classList.add('hidden');
-  alert('保存しました。ページを再読み込みすると反映されます。');
+  updateMergeBadge();
+  alert('一時保存しました。\n「HTMLに統合」ボタンでダウンロード → GitHubにアップロードすると全員に反映されます。');
 }
 
 // ─────────────────────────────────────────────
@@ -1818,6 +1919,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   Object.entries(AREA_DEFS).forEach(([k,v])=>{const o=document.createElement('option');o.value=k;o.textContent=v.label;netArea.appendChild(o);});
 
   updateStats();
+  updateMergeBadge();
   initCharts();
   renderTagChips();
   filterPapers();
