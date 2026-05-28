@@ -207,6 +207,28 @@ main { max-width: 1400px; margin: 0 auto; padding: 28px 24px 60px; }
 .btn-merge { background: #fff7ed; color: #c2410c; border: 1.5px solid #fed7aa; }
 .btn-merge:hover { background: #ffedd5; }
 .merge-badge { display: inline-flex; align-items: center; justify-content: center; background: #ea580c; color: #fff; border-radius: 10px; font-size: 11px; font-weight: 700; min-width: 18px; height: 18px; padding: 0 5px; margin-left: 4px; }
+/* Action card */
+.action-card { background: linear-gradient(145deg,#f0f6ff,#e8f0fe) !important; border-color: #bfdbfe !important; }
+.action-card:hover { transform: none !important; box-shadow: var(--shadow) !important; border-color: #bfdbfe !important; }
+.btn-add-paper { width:100%; padding:11px 8px; border:none; border-radius:var(--radius-sm); cursor:pointer; background:linear-gradient(135deg,#1d4ed8,#3b82f6); color:#fff; font-size:13px; font-weight:700; display:flex; align-items:center; justify-content:center; gap:6px; box-shadow:0 2px 8px rgba(29,78,216,0.28); transition:all 0.18s; }
+.btn-add-paper:hover { opacity:0.92; transform:translateY(-1px); box-shadow:0 4px 14px rgba(29,78,216,0.38); }
+.btn-gh-push { width:100%; padding:10px 8px; border:none; border-radius:var(--radius-sm); cursor:pointer; background:linear-gradient(135deg,#059669,#10b981); color:#fff; font-size:12px; font-weight:700; display:flex; align-items:center; justify-content:center; gap:5px; box-shadow:0 2px 8px rgba(5,150,105,0.28); transition:all 0.18s; }
+.btn-gh-push:hover { opacity:0.92; transform:translateY(-1px); }
+.btn-gh-push:disabled { opacity:0.6; cursor:not-allowed; transform:none; }
+.btn-gh-setup { background:none; border:none; cursor:pointer; font-size:10px; color:#94a3b8; padding:2px 0; text-align:left; transition:color 0.15s; width:100%; }
+.btn-gh-setup:hover { color:var(--primary); }
+.btn-gh-setup.configured { color:#059669; font-weight:600; }
+.action-note { font-size:10px; color:#94a3b8; line-height:1.55; margin-top:2px; }
+.fav-notice { font-size:12px; color:var(--text-light); background:#fffbeb; border:1px solid #fde68a; border-radius:var(--radius-sm); padding:6px 12px; margin-bottom:10px; }
+/* GitHub settings modal */
+.gh-field { margin-bottom:14px; }
+.gh-field label { display:block; font-size:12px; font-weight:600; color:var(--text); margin-bottom:4px; }
+.gh-field input { width:100%; box-sizing:border-box; padding:9px 12px; border:1px solid var(--border); border-radius:var(--radius-sm); font-size:13px; }
+.gh-field input:focus { outline:none; border-color:var(--primary); }
+.gh-hint { font-size:11px; color:#94a3b8; margin-top:4px; line-height:1.5; }
+.gh-status { font-size:12px; padding:8px 12px; border-radius:var(--radius-sm); margin-bottom:12px; display:none; }
+.gh-status.ok { background:#dcfce7; color:#166534; display:block; }
+.gh-status.err { background:#fee2e2; color:#991b1b; display:block; }
 .chart-hint { font-size: 11px; color: var(--text-light); margin-bottom: 8px; font-style: italic; }
 
 /* Dashboard split layout */
@@ -454,13 +476,18 @@ main { max-width: 1400px; margin: 0 auto; padding: 28px 24px 60px; }
         <div><div class="stat-val" id="s-authors">—</div><div class="stat-lbl">著者</div></div>
       </div>
       <!-- 操作カード -->
-      <div class="stat-card action-card" style="flex-direction:column;align-items:stretch;gap:8px;cursor:default" onclick="">
-        <button class="btn btn-primary" style="width:100%;font-size:12px;padding:8px" onclick="openAddModal()">＋ 論文追加</button>
-        <button class="btn btn-merge hidden" id="btn-merge" style="width:100%;font-size:12px;padding:8px" onclick="downloadMergedHTML()">📥 HTMLに統合 <span id="merge-count" class="merge-badge">0</span></button>
-        <div style="font-size:10px;color:#94a3b8;line-height:1.5;margin-top:2px">
-          ⚠️ 統合するとWebページが<br>書き換わります<br>
-          🔖 お気に入りはあなたの<br>ブラウザにのみ保存
-        </div>
+      <div class="stat-card action-card" style="flex-direction:column;align-items:stretch;gap:7px;cursor:default">
+        <button class="btn-add-paper" onclick="openAddModal()">
+          <span style="font-size:16px;font-weight:400">＋</span>論文を追加する
+        </button>
+        <button class="btn-gh-push hidden" id="btn-gh-push" onclick="deployToGitHub()">
+          🚀 <span id="gh-push-count">0</span>件をGitHubに反映
+        </button>
+        <button class="btn btn-merge hidden" id="btn-merge" style="width:100%;font-size:12px;padding:8px" onclick="downloadMergedHTML()">
+          📥 HTMLに統合 <span id="merge-count" class="merge-badge">0</span>
+        </button>
+        <button class="btn-gh-setup" id="btn-gh-setup" onclick="openGitHubSettings()">⚙️ GitHub連携設定</button>
+        <div class="action-note">ここで論文を追加するとwebページが書き換わります。</div>
       </div>
     </div>
 
@@ -642,6 +669,43 @@ main { max-width: 1400px; margin: 0 auto; padding: 28px 24px 60px; }
       <div style="display:flex;gap:10px;margin-top:16px;justify-content:flex-end">
         <button class="btn btn-clear" onclick="document.getElementById('add-modal').classList.add('hidden')">キャンセル</button>
         <button class="btn btn-primary" onclick="savePaper()">保存</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- GitHub Settings Modal -->
+<div class="modal-overlay hidden" id="gh-modal" onclick="if(event.target===this)this.classList.add('hidden')">
+  <div class="modal-box" style="max-width:460px">
+    <div class="modal-header">
+      <button class="modal-close" onclick="document.getElementById('gh-modal').classList.add('hidden')">✕</button>
+      <div class="modal-title">⚙️ GitHub連携設定</div>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:13px;color:var(--text-light);margin-bottom:16px;line-height:1.6">
+        設定後は「🚀 GitHubに反映」ボタン1回でサイトが更新されます。
+      </p>
+      <div id="gh-status" class="gh-status"></div>
+      <div class="gh-field">
+        <label>GitHub Personal Access Token</label>
+        <input type="password" id="gh-token-input" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx">
+        <div class="gh-hint">
+          GitHub → Settings → Developer settings → Personal access tokens → Tokens (classic)<br>
+          → Generate new token → <strong>repo</strong> にチェック → Generate
+        </div>
+      </div>
+      <div class="gh-field">
+        <label>GitHubユーザー名</label>
+        <input type="text" id="gh-owner-input" placeholder="YYUU-YYAA">
+      </div>
+      <div class="gh-field">
+        <label>リポジトリ名</label>
+        <input type="text" id="gh-repo-input" placeholder="polymer-lab-publications" value="polymer-lab-publications">
+      </div>
+      <div style="display:flex;gap:10px;margin-top:4px;justify-content:flex-end">
+        <button class="btn btn-clear" onclick="clearGitHubSettings()">設定を削除</button>
+        <button class="btn" style="background:#f1f5f9;color:#475569" onclick="testGitHubConnection()">接続テスト</button>
+        <button class="btn btn-primary" onclick="saveGitHubSettings()">保存</button>
       </div>
     </div>
   </div>
@@ -1651,17 +1715,174 @@ function toggleFav(id, btn) {
 // ADD PAPER
 // ─────────────────────────────────────────────
 // ─────────────────────────────────────────────
+// GITHUB SETTINGS
+// ─────────────────────────────────────────────
+function openGitHubSettings() {
+  const token = localStorage.getItem('gh_token') || '';
+  const owner = localStorage.getItem('gh_owner') || '';
+  const repo  = localStorage.getItem('gh_repo')  || 'polymer-lab-publications';
+  document.getElementById('gh-token-input').value = token ? '●'.repeat(20) : '';
+  document.getElementById('gh-owner-input').value = owner;
+  document.getElementById('gh-repo-input').value  = repo;
+  document.getElementById('gh-status').className  = 'gh-status';
+  document.getElementById('gh-status').textContent = '';
+  document.getElementById('gh-modal').classList.remove('hidden');
+}
+function saveGitHubSettings() {
+  const tokenInput = document.getElementById('gh-token-input').value.trim();
+  const owner = document.getElementById('gh-owner-input').value.trim();
+  const repo  = document.getElementById('gh-repo-input').value.trim();
+  if (!owner || !repo) { alert('ユーザー名とリポジトリ名を入力してください'); return; }
+  // Only update token if changed (not placeholder dots)
+  if (tokenInput && !tokenInput.startsWith('●')) {
+    localStorage.setItem('gh_token', tokenInput);
+  }
+  localStorage.setItem('gh_owner', owner);
+  localStorage.setItem('gh_repo', repo);
+  document.getElementById('gh-modal').classList.add('hidden');
+  updateMergeBadge();
+  alert('✅ 設定を保存しました。');
+}
+function clearGitHubSettings() {
+  if (!confirm('GitHub連携設定を削除しますか？')) return;
+  localStorage.removeItem('gh_token');
+  localStorage.removeItem('gh_owner');
+  localStorage.removeItem('gh_repo');
+  document.getElementById('gh-modal').classList.add('hidden');
+  updateMergeBadge();
+}
+async function testGitHubConnection() {
+  const tokenInput = document.getElementById('gh-token-input').value.trim();
+  const token = tokenInput.startsWith('●') ? localStorage.getItem('gh_token') : tokenInput;
+  const owner = document.getElementById('gh-owner-input').value.trim();
+  const repo  = document.getElementById('gh-repo-input').value.trim();
+  const st = document.getElementById('gh-status');
+  st.className = 'gh-status'; st.textContent = '接続確認中...'; st.style.display = 'block';
+  try {
+    const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/index.html`, {
+      headers: { 'Authorization': `token ${token}`, 'Accept': 'application/vnd.github.v3+json' }
+    });
+    if (res.ok) {
+      st.className = 'gh-status ok';
+      st.textContent = '✅ 接続成功！ファイルを確認できました。';
+    } else {
+      const err = await res.json();
+      st.className = 'gh-status err';
+      st.textContent = `❌ エラー: ${err.message}`;
+    }
+  } catch(e) {
+    st.className = 'gh-status err';
+    st.textContent = `❌ 接続失敗: ${e.message}`;
+  }
+}
+
+// ─────────────────────────────────────────────
 // MERGE BADGE
 // ─────────────────────────────────────────────
 function updateMergeBadge() {
   const stored = JSON.parse(localStorage.getItem('polymer_papers') || '[]');
-  const btn = document.getElementById('btn-merge');
-  const cnt = document.getElementById('merge-count');
+  const hasToken = !!localStorage.getItem('gh_token');
+  const ghBtn   = document.getElementById('btn-gh-push');
+  const dlBtn   = document.getElementById('btn-merge');
+  const setupBtn = document.getElementById('btn-gh-setup');
+  // Show deploy or download button based on pending count
   if (stored.length > 0) {
-    btn.classList.remove('hidden');
-    cnt.textContent = stored.length;
+    if (hasToken) {
+      ghBtn.classList.remove('hidden');
+      document.getElementById('gh-push-count').textContent = stored.length;
+      dlBtn.classList.add('hidden');
+    } else {
+      dlBtn.classList.remove('hidden');
+      document.getElementById('merge-count').textContent = stored.length;
+      ghBtn.classList.add('hidden');
+    }
   } else {
-    btn.classList.add('hidden');
+    ghBtn.classList.add('hidden');
+    dlBtn.classList.add('hidden');
+  }
+  // Settings button label
+  if (setupBtn) {
+    if (hasToken) {
+      setupBtn.textContent = '⚙️ GitHub設定済み ✓';
+      setupBtn.classList.add('configured');
+    } else {
+      setupBtn.textContent = '⚙️ GitHub連携設定';
+      setupBtn.classList.remove('configured');
+    }
+  }
+}
+
+// ─────────────────────────────────────────────
+// DEPLOY TO GITHUB (API)
+// ─────────────────────────────────────────────
+async function deployToGitHub() {
+  const token = localStorage.getItem('gh_token');
+  const owner = localStorage.getItem('gh_owner');
+  const repo  = localStorage.getItem('gh_repo') || 'polymer-lab-publications';
+  if (!token || !owner) { openGitHubSettings(); return; }
+
+  const stored = JSON.parse(localStorage.getItem('polymer_papers') || '[]');
+  if (stored.length === 0) { alert('追加された論文がありません。'); return; }
+
+  const list = stored.map((r,i) => `${i+1}. [${r[0]}] ${r[2]}`).join('\n');
+  if (!confirm(`${stored.length}件をGitHubに反映します。\n\n${list}\n\n続けますか？`)) return;
+
+  const btn = document.getElementById('btn-gh-push');
+  btn.disabled = true; btn.textContent = '⏳ 送信中...';
+
+  try {
+    // 1. 最新HTMLを取得してマーカーに挿入
+    const htmlRes = await fetch(location.href, {cache:'reload'});
+    if (!htmlRes.ok) throw new Error('ページ取得失敗');
+    let html = await htmlRes.text();
+    const MARKER = '// ── USER_PAPERS_INSERT ──';
+    if (!html.includes(MARKER)) throw new Error('マーカーが見つかりません');
+    const esc = s => String(s||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    const newLines = stored.map(r =>
+      `[${r[0]},'${esc(r[1])}','${esc(r[2])}','${esc(r[3])}','${esc(r[4])}','${esc(r[5])}','${esc(r[6])}'],`
+    ).join('\n');
+    html = html.replace(MARKER, newLines + '\n' + MARKER);
+
+    // 2. 現在のファイルのSHAを取得（上書きに必要）
+    const metaRes = await fetch(
+      `https://api.github.com/repos/${owner}/${repo}/contents/index.html`,
+      { headers: { Authorization: `token ${token}`, Accept: 'application/vnd.github.v3+json' } }
+    );
+    if (!metaRes.ok) {
+      const e = await metaRes.json();
+      throw new Error(`GitHub取得エラー: ${e.message}`);
+    }
+    const { sha } = await metaRes.json();
+
+    // 3. base64エンコードしてPush
+    const b64 = btoa(unescape(encodeURIComponent(html)));
+    const pushRes = await fetch(
+      `https://api.github.com/repos/${owner}/${repo}/contents/index.html`,
+      {
+        method: 'PUT',
+        headers: { Authorization: `token ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: `論文データベース更新（${stored.length}件追加）`,
+          content: b64,
+          sha,
+        }),
+      }
+    );
+    if (!pushRes.ok) {
+      const e = await pushRes.json();
+      throw new Error(`Push失敗: ${e.message}`);
+    }
+
+    // 4. localStorageをクリア
+    localStorage.removeItem('polymer_papers');
+    updateMergeBadge();
+    alert('✅ GitHubに反映しました！\n1〜2分後にサイトに反映されます。\nページを再読み込みすると最新状態になります。');
+
+  } catch(e) {
+    alert(`❌ エラーが発生しました:\n${e.message}`);
+  } finally {
+    btn.disabled = false;
+    updateMergeBadge();
   }
 }
 
