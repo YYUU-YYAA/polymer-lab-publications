@@ -198,6 +198,13 @@ main { max-width: 1400px; margin: 0 auto; padding: 28px 24px 60px; }
 .fav-btn { background: none; border: none; cursor: pointer; padding: 0 2px; color: #cbd5e1; transition: color 0.2s; line-height: 1; display: flex; align-items: center; }
 .fav-btn:hover { color: #f87171; }
 .fav-btn.saved { color: #d95252; }
+/* Pending (stored) paper styling */
+.paper-card.pending { border-left: 3px solid #f59e0b; }
+.pending-badge { display: inline-flex; align-items: center; gap: 3px; background: #fef3c7; color: #b45309; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 10px; }
+.btn-edit-paper { background: none; border: none; cursor: pointer; font-size: 14px; padding: 2px 4px; opacity: 0.5; transition: opacity 0.15s; }
+.btn-edit-paper:hover { opacity: 1; }
+.btn-delete-paper { background: none; border: none; cursor: pointer; font-size: 14px; padding: 2px 4px; opacity: 0.5; transition: opacity 0.15s; color: #dc2626; }
+.btn-delete-paper:hover { opacity: 1; }
 .btn { padding: 7px 13px; border: none; border-radius: var(--radius-sm); cursor: pointer; font-size: 13px; font-weight: 600; transition: all 0.15s; }
 .btn-primary { background: var(--primary); color: white; }
 .btn-primary:hover { background: var(--primary-dark); }
@@ -532,6 +539,7 @@ main { max-width: 1400px; margin: 0 auto; padding: 28px 24px 60px; }
       <button class="btn btn-fav" id="btn-fav-filter" onclick="toggleFavFilter()">🔖 お気に入り</button>
       <button class="btn btn-clear" onclick="clearFilters()">✕ クリア</button>
     </div>
+    <div class="fav-notice">🔖 お気に入りはあなたのブラウザにのみ保存されます。他の人には見えません。</div>
     <div id="tag-chips-row" class="tag-chips-row"></div>
     <div class="paper-count" id="paper-count"></div>
     <div class="papers-grid" id="papers-grid"></div>
@@ -1318,17 +1326,20 @@ let _id = 1;
 const STORED = JSON.parse(localStorage.getItem('polymer_papers') || '[]');
 let FAVORITES = new Set(JSON.parse(localStorage.getItem('polymer_favs') || '[]'));
 
-const PAPERS = [...RAW, ...STORED].map(r => {
+function makeEntry(r, isStored) {
   const auth = normalizeAuthors(r[3]);
   return {
-    id: _id++,
-    year: r[0], type: r[1], title: r[2],
-    authors: auth,
-    journal: r[4], vol: r[5], doi: r[6],
+    id: _id++, year: r[0], type: r[1], title: r[2],
+    authors: auth, journal: r[4], vol: r[5], doi: r[6],
     area: getArea(r[2], r[4]),
     tags: getTags(r[2], r[4], auth, r[6]),
+    isStored,
   };
-});
+}
+const PAPERS = [
+  ...RAW.map(r => makeEntry(r, false)),
+  ...STORED.map(r => makeEntry(r, true)),
+];
 
 const YEARS = [...new Set(PAPERS.map(p=>p.year))].sort();
 const ORIG = PAPERS.filter(p=>p.type==='O');
@@ -1430,11 +1441,15 @@ function makePaperCard(p) {
   const isFav = FAVORITES.has(p.id);
   const doiLink = p.doi?`<a class="doi-link" href="https://doi.org/${p.doi}" target="_blank" rel="noopener" onclick="event.stopPropagation()">DOI →</a>`:'';
   const contentTags = p.tags.slice(0,4).map(t=>`<span class="tag-content">${t}</span>`).join('');
+  const pendingBadge = p.isStored ? `<span class="pending-badge">⏳ 未反映</span>` : '';
+  const editBtns = p.isStored ? `
+    <button class="btn-edit-paper" title="編集" onclick="event.stopPropagation();editPaper(${p.id})">✏️</button>
+    <button class="btn-delete-paper" title="削除" onclick="event.stopPropagation();deletePaper(${p.id})">🗑️</button>` : '';
   return `
-<div class="paper-card" onclick="openModal(${p.id})">
+<div class="paper-card${p.isStored?' pending':''}" onclick="openModal(${p.id})">
   <div class="paper-header">
     <span class="paper-year">${p.year}</span>
-    <div style="display:flex;gap:4px;align-items:center">${makeTypeBadge(p.type)}</div>
+    <div style="display:flex;gap:4px;align-items:center">${pendingBadge}${makeTypeBadge(p.type)}</div>
   </div>
   <div class="paper-title">${p.title}</div>
   <div class="paper-authors">${p.authors}</div>
@@ -1442,7 +1457,10 @@ function makePaperCard(p) {
   <div class="paper-tags">${makeAreaTag(p.area)}${contentTags}</div>
   <div class="paper-footer">
     ${doiLink}
-    <button class="fav-btn${isFav?' saved':''}" title="${isFav?'お気に入り解除':'お気に入り追加'}" onclick="event.stopPropagation();toggleFav(${p.id},this)"><svg width="16" height="18" viewBox="0 0 16 18" fill="currentColor"><path d="M2 1a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v15.5a.5.5 0 0 1-.777.416L8 14.101l-5.223 2.815A.5.5 0 0 1 2 16.5V1z"/></svg></button>
+    <div style="display:flex;align-items:center;gap:2px">
+      ${editBtns}
+      <button class="fav-btn${isFav?' saved':''}" title="${isFav?'お気に入り解除':'お気に入り追加'}" onclick="event.stopPropagation();toggleFav(${p.id},this)"><svg width="16" height="18" viewBox="0 0 16 18" fill="currentColor"><path d="M2 1a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v15.5a.5.5 0 0 1-.777.416L8 14.101l-5.223 2.815A.5.5 0 0 1 2 16.5V1z"/></svg></button>
+    </div>
   </div>
 </div>`;
 }
@@ -1956,22 +1974,66 @@ async function downloadMergedHTML() {
   }
 }
 
-function openAddModal() { document.getElementById('add-modal').classList.remove('hidden'); }
+let _editingPaperTitle = null; // 編集中の論文タイトル（特定キー）
+
+function openAddModal() {
+  _editingPaperTitle = null;
+  document.querySelector('#add-modal .modal-title').textContent = '＋ 新しい論文を追加';
+  ['add-year','add-title','add-authors','add-journal','add-vol','add-doi'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('add-type').value = 'O';
+  document.getElementById('add-modal').classList.remove('hidden');
+}
+
+function editPaper(id) {
+  const p = PAPERS.find(x => x.id === id);
+  if (!p || !p.isStored) return;
+  _editingPaperTitle = p.title; // 元のタイトルで特定
+  document.querySelector('#add-modal .modal-title').textContent = '✏️ 論文を編集';
+  document.getElementById('add-year').value    = p.year;
+  document.getElementById('add-type').value    = p.type;
+  document.getElementById('add-title').value   = p.title;
+  document.getElementById('add-authors').value = p.authors;
+  document.getElementById('add-journal').value = p.journal;
+  document.getElementById('add-vol').value     = p.vol || '';
+  document.getElementById('add-doi').value     = p.doi || '';
+  document.getElementById('add-modal').classList.remove('hidden');
+}
+
+function deletePaper(id) {
+  const p = PAPERS.find(x => x.id === id);
+  if (!p || !p.isStored) return;
+  if (!confirm(`この論文を削除しますか？\n\n「${p.title}」`)) return;
+  const stored = JSON.parse(localStorage.getItem('polymer_papers') || '[]');
+  const idx = stored.findIndex(r => r[2] === p.title);
+  if (idx !== -1) stored.splice(idx, 1);
+  localStorage.setItem('polymer_papers', JSON.stringify(stored));
+  updateMergeBadge();
+  location.reload();
+}
+
 function savePaper() {
-  const yr=parseInt(document.getElementById('add-year').value);
-  const tp=document.getElementById('add-type').value;
-  const ti=document.getElementById('add-title').value.trim();
-  const au=document.getElementById('add-authors').value.trim();
-  const jo=document.getElementById('add-journal').value.trim();
-  const vo=document.getElementById('add-vol').value.trim();
-  const doi=document.getElementById('add-doi').value.trim();
-  if(!yr||!ti||!au||!jo){alert('年・タイトル・著者・ジャーナルは必須です');return;}
-  const stored=JSON.parse(localStorage.getItem('polymer_papers')||'[]');
-  stored.push([yr,tp,ti,au,jo,vo,doi]);
-  localStorage.setItem('polymer_papers',JSON.stringify(stored));
+  const yr  = parseInt(document.getElementById('add-year').value);
+  const tp  = document.getElementById('add-type').value;
+  const ti  = document.getElementById('add-title').value.trim();
+  const au  = document.getElementById('add-authors').value.trim();
+  const jo  = document.getElementById('add-journal').value.trim();
+  const vo  = document.getElementById('add-vol').value.trim();
+  const doi = document.getElementById('add-doi').value.trim();
+  if (!yr||!ti||!au||!jo) { alert('年・タイトル・著者・ジャーナルは必須です'); return; }
+  const stored = JSON.parse(localStorage.getItem('polymer_papers') || '[]');
+  if (_editingPaperTitle) {
+    // 編集モード：元のエントリを置き換え
+    const idx = stored.findIndex(r => r[2] === _editingPaperTitle);
+    if (idx !== -1) stored[idx] = [yr, tp, ti, au, jo, vo, doi];
+    else stored.push([yr, tp, ti, au, jo, vo, doi]);
+    _editingPaperTitle = null;
+  } else {
+    stored.push([yr, tp, ti, au, jo, vo, doi]);
+  }
+  localStorage.setItem('polymer_papers', JSON.stringify(stored));
   document.getElementById('add-modal').classList.add('hidden');
   updateMergeBadge();
-  alert('一時保存しました。\n「HTMLに統合」ボタンでダウンロード → GitHubにアップロードすると全員に反映されます。');
+  location.reload();
 }
 
 // ─────────────────────────────────────────────
