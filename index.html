@@ -480,7 +480,7 @@ main { max-width: 1400px; margin: 0 auto; padding: 28px 24px 60px; }
     <div>
       <div class="header-badge">東京大学 大学院農学生命科学研究科　生物材料科学専攻</div>
       <h1>高分子材料学研究室 論文データベース</h1>
-      <p>Laboratory of Polymeric Materials, Iwata Lab — <span id="h-year-range">2011–2026</span></p>
+      <p>Laboratory of Polymeric Materials, Iwata Lab</p>
     </div>
     <div class="header-stats">
       <div class="hstat"><div class="hstat-val" id="h-total">—</div><div class="hstat-lbl">総論文数</div></div>
@@ -1578,7 +1578,7 @@ function updateStats() {
   document.getElementById('h-orig').textContent=orig;
   document.getElementById('h-journals').textContent=journals;
   document.getElementById('h-years').textContent=spanY;
-  document.getElementById('h-year-range').textContent=`${minY}–${maxY}`;
+  const yrEl=document.getElementById('h-year-range'); if(yrEl) yrEl.textContent=`${minY}–${maxY}`;
 }
 function goToTabType(tab, type) {
   switchTab(tab);
@@ -2286,7 +2286,7 @@ function renderAbstractSection(doi){
     sec.innerHTML=abstractViewHTML(doi,entry.text,entry.edited);
   } else {
     const safeD=doi.replace(/\x27/g,"\\\\'");
-    sec.innerHTML='<div class="modal-abstract-title">\u{1F4C4} アブストラクト <button class="modal-abstract-btn" id="abs-fetch-btn" onclick="fetchAndShowAbstract(\''+safeD+'\')">取得する</button><button class='modal-abstract-btn' style='margin-left:6px' onclick="startEditAbstract('"+ safeD +"')">✏️ 手動入力</button></div>';
+    sec.innerHTML='<div class="modal-abstract-title">\u{1F4C4} アブストラクト <button class="modal-abstract-btn" id="abs-fetch-btn" onclick="fetchAndShowAbstract(\''+safeD+'\')">取得する</button><button class="modal-abstract-btn" style="margin-left:6px" onclick="startEditAbstract(\''+safeD+'\')">✏️ 手動入力</button></div>';
   }
 }
 
