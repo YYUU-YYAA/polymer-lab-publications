@@ -211,6 +211,7 @@ main { max-width: 1400px; margin: 0 auto; padding: 28px 24px 60px; }
 .view-toggle-btn { padding: 7px 11px; border: 1px solid var(--border); background: var(--bg); color: var(--text-light); font-size: 14px; cursor: pointer; border-radius: var(--radius-sm); transition: all 0.15s; line-height: 1; }
 .view-toggle-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
 /* Papers table view */
+.papers-grid.table-view { display: block; }
 .papers-table { width: 100%; border-collapse: collapse; background: var(--white); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); border: 1px solid var(--border); table-layout: fixed; }
 .papers-table th { text-align: left; padding: 8px 12px; background: var(--bg); font-weight: 600; font-size: 12px; color: var(--text-light); border-bottom: 2px solid var(--border); white-space: nowrap; overflow: hidden; }
 .papers-table td { padding: 7px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -1113,9 +1114,9 @@ const AREA_DEFS = {
 function getArea(title, journal) {
   const t = (title + ' ' + journal).toLowerCase();
   // 多糖 takes priority over PHA to avoid "polysaccharide...hydroxyl" misclassification
-  if (/curdlan|paramylon|glucan|xylan|glucomannan|dextran|nigeran|chitosan|chitin|pullulan|polysaccharide|cellulose|alginat|sophorose/.test(t)) return '多糖';
+  if (/curdlan|paramylon|glucan|xylan|glucomannan|dextran|nigeran|chitosan|chitin|pullulan|polysaccharide|cellulose|alginat|sophorose|多糖|セルロース|キチン|キトサン|アルギン酸|デキストラン|プルラン|グルコマンナン|パラミロン|カードラン|ニゲラン/.test(t)) return '多糖';
   if (/polyhydroxyalk|p\(3hb|p\[.*3h[bvh]|pha\b|hydroxybutyrate|hydroxyvalerate|hydroxyhexanoate|hydroxyalkanoate|phbv|\b3hb\b|\b4hb\b|\b3hv\b|\b3hh\b/.test(t)) return 'PHA';
-  if (/vanill|ferulic|gallic|caffeic|aromatic poly|biphenyl poly|anthraquin|cardanol/.test(t)) return '芳香族';
+  if (/vanill|ferulic|gallic|caffeic|aromatic poly|biphenyl poly|anthraquin|cardanol|ジバニリン|フェルラ酸|ガリック酸|カフェ酸/.test(t)) return '芳香族';
   return 'その他';
 }
 
@@ -1536,6 +1537,7 @@ let paperView = 'card';
 function setPaperView(v) {
   paperView = v;
   document.querySelectorAll('.view-toggle-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.view === v));
+  document.getElementById('papers-grid').classList.toggle('table-view', v === 'table');
   filterPapers();
 }
 function toggleFavFilter() {
