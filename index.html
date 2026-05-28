@@ -204,6 +204,16 @@ main { max-width: 1400px; margin: 0 auto; padding: 28px 24px 60px; }
 .ai-run-btn { background: #6366f1; color: white; border: none; border-radius: var(--radius-sm); padding: 10px 20px; font-size: 14px; font-weight: 600; cursor: pointer; white-space: nowrap; }
 .ai-run-btn:hover { background: #4f46e5; }
 
+/* Area tree */
+.area-tree-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; margin-bottom: 28px; }
+.area-tree-node { background: var(--white); border-radius: var(--radius); padding: 16px; border: 1px solid var(--border); }
+.area-tree-header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; font-size: 15px; font-weight: 700; color: var(--text); }
+.area-tree-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+.area-tree-count { margin-left: auto; font-size: 12px; font-weight: 500; color: var(--text-light); }
+.area-tree-tags { display: flex; flex-wrap: wrap; gap: 5px; }
+.area-tree-tag { font-size: 12px; padding: 3px 9px; border-radius: 12px; cursor: pointer; border: 1px solid var(--border); background: #f8fafc; color: #475569; transition: all 0.12s; }
+.area-tree-tag:hover { color: white; border-color: transparent; }
+
 /* Section title */
 .section-title { font-size: 20px; font-weight: 700; margin-bottom: 20px; color: var(--text); padding-bottom: 10px; border-bottom: 2px solid var(--border); }
 
@@ -415,7 +425,7 @@ main { max-width: 1400px; margin: 0 auto; padding: 28px 24px 60px; }
 <!-- ── Password Gate ── -->
 <div id="pw-gate">
   <div class="pw-card">
-    <div class="pw-logo">🧬</div>
+    <div class="pw-logo"><svg width="64" height="88" viewBox="0 0 44 62" xmlns="http://www.w3.org/2000/svg" fill="none"><defs><linearGradient id="dh-p2" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#fb7eb9"/><stop offset="100%" stop-color="#c026d3"/></linearGradient><linearGradient id="dh-b2" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#7dd3fc"/><stop offset="100%" stop-color="#1d4ed8"/></linearGradient></defs><path d="M22,0 C7,0 7,21 22,21" stroke="url(#dh-b2)" stroke-width="2.5" stroke-opacity="0.55" stroke-linecap="round"/><line x1="11" y1="7" x2="22" y2="7" stroke="#93c5fd" stroke-width="1.5" stroke-opacity="0.55"/><line x1="11" y1="14" x2="22" y2="14" stroke="#93c5fd" stroke-width="1.5" stroke-opacity="0.55"/><path d="M22,0 C37,0 37,21 22,21" stroke="url(#dh-p2)" stroke-width="3" stroke-linecap="round"/><line x1="22" y1="7" x2="33" y2="7" stroke="#f9a8d4" stroke-width="2"/><line x1="22" y1="14" x2="33" y2="14" stroke="#f9a8d4" stroke-width="2"/><path d="M22,21 C7,21 7,42 22,42" stroke="url(#dh-p2)" stroke-width="2.5" stroke-opacity="0.55" stroke-linecap="round"/><line x1="11" y1="28" x2="22" y2="28" stroke="#f9a8d4" stroke-width="1.5" stroke-opacity="0.55"/><line x1="11" y1="35" x2="22" y2="35" stroke="#f9a8d4" stroke-width="1.5" stroke-opacity="0.55"/><path d="M22,21 C37,21 37,42 22,42" stroke="url(#dh-b2)" stroke-width="3" stroke-linecap="round"/><line x1="22" y1="28" x2="33" y2="28" stroke="#93c5fd" stroke-width="2"/><line x1="22" y1="35" x2="33" y2="35" stroke="#93c5fd" stroke-width="2"/><path d="M22,42 C7,42 7,62 22,62" stroke="url(#dh-b2)" stroke-width="2.5" stroke-opacity="0.55" stroke-linecap="round"/><line x1="11" y1="49" x2="22" y2="49" stroke="#93c5fd" stroke-width="1.5" stroke-opacity="0.55"/><line x1="11" y1="56" x2="22" y2="56" stroke="#93c5fd" stroke-width="1.5" stroke-opacity="0.55"/><path d="M22,42 C37,42 37,62 22,62" stroke="url(#dh-p2)" stroke-width="3" stroke-linecap="round"/><line x1="22" y1="49" x2="33" y2="49" stroke="#f9a8d4" stroke-width="2"/><line x1="22" y1="56" x2="33" y2="56" stroke="#f9a8d4" stroke-width="2"/><circle cx="22" cy="0" r="2.5" fill="white" opacity="0.85"/><circle cx="22" cy="21" r="3" fill="white"/><circle cx="22" cy="42" r="3" fill="white"/><circle cx="22" cy="62" r="2.5" fill="white" opacity="0.85"/></svg></div>
     <div class="pw-title">高分子材料学研究室 論文データベース</div>
     <div class="pw-sub">東京大学 大学院農学生命科学研究科</div>
     <div class="pw-input-wrap">
@@ -466,7 +476,7 @@ main { max-width: 1400px; margin: 0 auto; padding: 28px 24px 60px; }
 
 <header>
   <div class="header-inner">
-    <div class="header-logo">🧬</div>
+    <div class="header-logo"><svg width="44" height="62" viewBox="0 0 44 62" xmlns="http://www.w3.org/2000/svg" fill="none"><defs><linearGradient id="dh-p1" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#fb7eb9"/><stop offset="100%" stop-color="#c026d3"/></linearGradient><linearGradient id="dh-b1" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#7dd3fc"/><stop offset="100%" stop-color="#1d4ed8"/></linearGradient></defs><path d="M22,0 C7,0 7,21 22,21" stroke="url(#dh-b1)" stroke-width="2.5" stroke-opacity="0.55" stroke-linecap="round"/><line x1="11" y1="7" x2="22" y2="7" stroke="#93c5fd" stroke-width="1.5" stroke-opacity="0.55"/><line x1="11" y1="14" x2="22" y2="14" stroke="#93c5fd" stroke-width="1.5" stroke-opacity="0.55"/><path d="M22,0 C37,0 37,21 22,21" stroke="url(#dh-p1)" stroke-width="3" stroke-linecap="round"/><line x1="22" y1="7" x2="33" y2="7" stroke="#f9a8d4" stroke-width="2"/><line x1="22" y1="14" x2="33" y2="14" stroke="#f9a8d4" stroke-width="2"/><path d="M22,21 C7,21 7,42 22,42" stroke="url(#dh-p1)" stroke-width="2.5" stroke-opacity="0.55" stroke-linecap="round"/><line x1="11" y1="28" x2="22" y2="28" stroke="#f9a8d4" stroke-width="1.5" stroke-opacity="0.55"/><line x1="11" y1="35" x2="22" y2="35" stroke="#f9a8d4" stroke-width="1.5" stroke-opacity="0.55"/><path d="M22,21 C37,21 37,42 22,42" stroke="url(#dh-b1)" stroke-width="3" stroke-linecap="round"/><line x1="22" y1="28" x2="33" y2="28" stroke="#93c5fd" stroke-width="2"/><line x1="22" y1="35" x2="33" y2="35" stroke="#93c5fd" stroke-width="2"/><path d="M22,42 C7,42 7,62 22,62" stroke="url(#dh-b1)" stroke-width="2.5" stroke-opacity="0.55" stroke-linecap="round"/><line x1="11" y1="49" x2="22" y2="49" stroke="#93c5fd" stroke-width="1.5" stroke-opacity="0.55"/><line x1="11" y1="56" x2="22" y2="56" stroke="#93c5fd" stroke-width="1.5" stroke-opacity="0.55"/><path d="M22,42 C37,42 37,62 22,62" stroke="url(#dh-p1)" stroke-width="3" stroke-linecap="round"/><line x1="22" y1="49" x2="33" y2="49" stroke="#f9a8d4" stroke-width="2"/><line x1="22" y1="56" x2="33" y2="56" stroke="#f9a8d4" stroke-width="2"/><circle cx="22" cy="0" r="2.5" fill="white" opacity="0.85"/><circle cx="22" cy="21" r="3" fill="white"/><circle cx="22" cy="42" r="3" fill="white"/><circle cx="22" cy="62" r="2.5" fill="white" opacity="0.85"/></svg></div>
     <div>
       <div class="header-badge">東京大学 大学院農学生命科学研究科　生物材料科学専攻</div>
       <h1>高分子材料学研究室 論文データベース</h1>
@@ -528,7 +538,7 @@ main { max-width: 1400px; margin: 0 auto; padding: 28px 24px 60px; }
           📥 HTMLに統合 <span id="merge-count" class="merge-badge">0</span>
         </button>
         <button class="btn-gh-setup" id="btn-gh-setup" onclick="openGitHubSettings()">⚙️ GitHub連携設定</button>
-        <div class="action-note">ここで論文を追加するとwebページが書き換わります。</div>
+        <div class="action-note" style="font-size:11px;color:#64748b;line-height:1.6;background:#f8fafc;border:1px solid var(--border);border-radius:6px;padding:7px 10px;margin-top:2px"><div>📝 論文を追加すると管理者がGitHubに反映することでwebページが書き換わります。</div><div style="margin-top:4px;padding-top:4px;border-top:1px solid var(--border)">📦 <strong>一括論文取り込み</strong>は管理者にご連絡ください。</div></div>
       </div>
     </div>
 
@@ -571,14 +581,18 @@ main { max-width: 1400px; margin: 0 auto; padding: 28px 24px 60px; }
       </select>
       <select id="filter-area"><option value="">全分野</option></select>
       <button class="btn btn-fav" id="btn-fav-filter" onclick="toggleFavFilter()">🔖 お気に入り</button>
-      <button class="btn btn-ai" id="btn-ai-toggle" onclick="toggleAISearch()">🤖 AIで探す</button>
+      <button class="btn btn-ai" id="btn-ai-toggle" onclick="toggleAISearch()">🔍 簡易AI検索</button>
       <button class="btn btn-clear" onclick="clearFilters()">✕ クリア</button>
     </div>
     <div class="fav-notice">🔖 お気に入りはあなたのブラウザにのみ保存されます。他の人には見えません。</div>
     <div id="ai-search-panel" class="ai-search-panel" style="display:none">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <span style="font-size:13px;font-weight:600;color:#5b21b6">🔍 簡易AI検索</span>
+        <button onclick="toggleAISearch()" style="background:none;border:none;font-size:18px;cursor:pointer;color:var(--text-light);line-height:1;padding:0 2px" title="閉じる">✕</button>
+      </div>
       <div style="display:flex;gap:10px;align-items:flex-start">
-        <textarea id="ai-query" class="ai-search-input" placeholder="「PHAの最近の研究は？」「光を通す繊維の論文」「2025年の多糖関連」「生分解性ポリマー全部」などと入力"></textarea>
-        <button class="ai-run-btn" onclick="runAISearch()">🔍 探す</button>
+        <textarea id="ai-query" class="ai-search-input" placeholder="「PHAの最近の研究は？」「2025年の多糖関連」などと入力"></textarea>
+        <button class="ai-run-btn" onclick="runAISearch()">探す</button>
       </div>
       <div id="ai-results"></div>
     </div>
@@ -612,6 +626,8 @@ main { max-width: 1400px; margin: 0 auto; padding: 28px 24px 60px; }
         </div>
       </div>
     </div>
+    <div class="section-title">🌿 研究テーマ 分類ツリー</div>
+    <div id="area-tree-section" class="area-tree-grid"></div>
     <div class="section-title">🔬 研究分野別 論文一覧</div>
     <div class="areas-grid" id="areas-grid"></div>
     <div id="area-detail-section" style="display:none;margin-top:28px">
@@ -1126,6 +1142,10 @@ const RAW = [
 // ── USER_PAPERS_INSERT ──
 ];
 
+// ── ABSTRACTS_START ──
+const ABSTRACTS_EMBEDDED={};
+// ── ABSTRACTS_END ──
+
 // ─────────────────────────────────────────────
 // AREA DEFINITIONS (4 main categories)
 // ─────────────────────────────────────────────
@@ -1467,7 +1487,7 @@ function initCharts() {
     options:{
       responsive:true,
       scales:{x:{stacked:true},y:{stacked:true,beginAtZero:true}},
-      plugins:{legend:{position:'bottom',labels:{font:{size:11}}}},
+      plugins:{legend:{position:'bottom',labels:{font:{size:14},padding:16}}},
       onClick(_,els){
         if(!els.length) return;
         const yr = YEARS[els[0].index];
@@ -1629,6 +1649,42 @@ function clearFilters() {
 }
 
 // ─────────────────────────────────────────────
+function goToTag(tag){
+  switchTab('papers');
+  activeTagFilter=tag;
+  const searchEl=document.getElementById('search');
+  if(searchEl) searchEl.value=tag;
+  renderTagChips();
+  filterPapers();
+  setTimeout(()=>document.getElementById('papers-grid')?.scrollIntoView({behavior:'smooth',block:'start'}),150);
+}
+function renderAreaTree(){
+  const sec=document.getElementById('area-tree-section');
+  if(!sec)return;
+  sec.innerHTML=Object.entries(AREA_DEFS).map(([aKey,aDef])=>{
+    const areaPapers=ORIG.filter(p=>p.area===aKey);
+    const tagCnt={};
+    areaPapers.forEach(p=>p.tags.forEach(t=>{tagCnt[t]=(tagCnt[t]||0)+1;}));
+    const sortedTags=Object.entries(tagCnt).sort((a,b)=>b[1]-a[1]).map(x=>x[0]);
+    const tagHTML=sortedTags.map(t=>{
+      const safeT=t.replace(/\x27/g,"\\\\'");
+      return '<span class="area-tree-tag" '
+        +'onmouseover="this.style.background=\''+aDef.color+'\';this.style.color=\'white\';this.style.borderColor=\''+aDef.color+'\'" '
+        +'onmouseout="this.style.background=\'\';this.style.color=\'\';this.style.borderColor=\'\'" '
+        +'onclick="goToTag(\''+safeT+'\')">'
+        +t+'</span>';
+    }).join('');
+    return '<div class="area-tree-node" style="border-left:4px solid '+aDef.color+'">'
+      +'<div class="area-tree-header">'
+      +'<span class="area-tree-dot" style="background:'+aDef.color+'"></span>'
+      +aDef.label
+      +'<span class="area-tree-count">'+areaPapers.length+'件</span>'
+      +'</div>'
+      +'<div class="area-tree-tags">'+tagHTML+'</div>'
+      +'</div>';
+  }).join('');
+}
+
 // AREAS TAB
 // ─────────────────────────────────────────────
 function renderAreas() {
@@ -1772,6 +1828,7 @@ function renderTagChips() {
 }
 function selectTagChip(tag) {
   activeTagFilter = activeTagFilter===tag ? null : tag;
+  const searchEl=document.getElementById('search'); if(searchEl) searchEl.value=activeTagFilter||'';
   renderTagChips();
   filterPapers();
 }
@@ -1970,6 +2027,22 @@ async function deployToGitHub() {
     ).join('\n');
     html = html.replace(MARKER, newLines + '\n' + MARKER);
 
+    // 1b. アブストラクトをHTML内にマージ
+    {
+      const absStart='// ── ABSTRACTS_START ──';
+      const absEnd='// ── ABSTRACTS_END ──';
+      if(html.includes(absStart)&&html.includes(absEnd)){
+        const si=html.indexOf(absStart);
+        const ei=html.indexOf(absEnd)+absEnd.length;
+        let emb={};
+        const m=html.substring(si,ei).match(/ABSTRACTS_EMBEDDED=(\{[\s\S]*?\});/);
+        if(m){try{emb=JSON.parse(m[1]);}catch(e){}}
+        const loc=JSON.parse(localStorage.getItem('polymer_abstracts')||'{}');
+        const merged=Object.assign({},emb,loc);
+        html=html.substring(0,si)+absStart+'\nconst ABSTRACTS_EMBEDDED='+JSON.stringify(merged)+';\n'+absEnd+html.substring(ei);
+      }
+    }
+
     // 2. 現在のファイルのSHAを取得（上書きに必要）
     const metaRes = await fetch(
       `https://api.github.com/repos/${owner}/${repo}/contents/index.html`,
@@ -2002,6 +2075,7 @@ async function deployToGitHub() {
 
     // 4. localStorageをクリア
     localStorage.removeItem('polymer_papers');
+    localStorage.removeItem('polymer_abstracts');
     localStorage.removeItem('polymer_patches');
     updateMergeBadge();
     alert('✅ GitHubに反映しました！\n1〜2分後にサイトに反映されます。\nページを再読み込みすると最新状態になります。');
@@ -2048,6 +2122,22 @@ async function downloadMergedHTML() {
 
     html = html.replace(MARKER, newLines + '\n' + MARKER);
 
+    // アブストラクトをHTML内にマージ
+    {
+      const absStart='// ── ABSTRACTS_START ──';
+      const absEnd='// ── ABSTRACTS_END ──';
+      if(html.includes(absStart)&&html.includes(absEnd)){
+        const si=html.indexOf(absStart);
+        const ei=html.indexOf(absEnd)+absEnd.length;
+        let emb={};
+        const m=html.substring(si,ei).match(/ABSTRACTS_EMBEDDED=(\{[\s\S]*?\});/);
+        if(m){try{emb=JSON.parse(m[1]);}catch(e){}}
+        const loc=JSON.parse(localStorage.getItem('polymer_abstracts')||'{}');
+        const merged=Object.assign({},emb,loc);
+        html=html.substring(0,si)+absStart+'\nconst ABSTRACTS_EMBEDDED='+JSON.stringify(merged)+';\n'+absEnd+html.substring(ei);
+      }
+    }
+
     // ダウンロード
     const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
     const a = document.createElement('a');
@@ -2060,6 +2150,7 @@ async function downloadMergedHTML() {
 
     // localStorageをクリア
     localStorage.removeItem('polymer_papers');
+    localStorage.removeItem('polymer_abstracts');
     updateMergeBadge();
 
     alert(
@@ -2176,7 +2267,11 @@ function closeModal(e){if(e.target===document.getElementById('modal'))document.g
 // ─────────────────────────────────────────────
 // ABSTRACT (CrossRef API)
 // ─────────────────────────────────────────────
-function getAbstractStore(){return JSON.parse(localStorage.getItem('polymer_abstracts')||'{}');}
+function getAbstractStore(){
+  const emb=(typeof ABSTRACTS_EMBEDDED!=='undefined')?ABSTRACTS_EMBEDDED:{};
+  const loc=JSON.parse(localStorage.getItem('polymer_abstracts')||'{}');
+  return Object.assign({},emb,loc);
+}
 function saveAbstractStore(obj){localStorage.setItem('polymer_abstracts',JSON.stringify(obj));}
 function escHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 
@@ -2191,7 +2286,7 @@ function renderAbstractSection(doi){
     sec.innerHTML=abstractViewHTML(doi,entry.text,entry.edited);
   } else {
     const safeD=doi.replace(/\x27/g,"\\\\'");
-    sec.innerHTML='<div class="modal-abstract-title">\u{1F4C4} アブストラクト <button class="modal-abstract-btn" id="abs-fetch-btn" onclick="fetchAndShowAbstract(\''+safeD+'\')">取得する</button></div>';
+    sec.innerHTML='<div class="modal-abstract-title">\u{1F4C4} アブストラクト <button class="modal-abstract-btn" id="abs-fetch-btn" onclick="fetchAndShowAbstract(\''+safeD+'\')">取得する</button><button class='modal-abstract-btn' style='margin-left:6px' onclick="startEditAbstract('"+ safeD +"')">✏️ 手動入力</button></div>';
   }
 }
 
@@ -2512,6 +2607,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   renderTagChips();
   filterPapers();
   renderAreas();
+  renderAreaTree();
   renderTagCards();
   renderAuthors();
   renderJournalTable();
