@@ -1468,7 +1468,7 @@ function makeTypeBadge(type) {
 }
 function makePaperCard(p) {
   const isFav = FAVORITES.has(p.id);
-  const doiLink = p.doi?`<a class="doi-link" href="https://doi.org/${p.doi}" target="_blank" rel="noopener" onclick="event.stopPropagation()"></a>`:'';
+  const doiLink = p.doi?`<a class="doi-link" href="https://doi.org/${p.doi}" target="_blank" rel="noopener" onclick="event.stopPropagation()">DOI →</a>`:'';
   const contentTags = p.tags.slice(0,4).map(t=>`<span class="tag-content">${t}</span>`).join('');
   const pendingBadge = p.isStored
     ? `<span class="pending-badge">⏳ 未反映</span>`
@@ -1499,7 +1499,7 @@ function makePaperCard(p) {
 
 function makePaperRow(p) {
   const isFav = FAVORITES.has(p.id);
-  const doiCell = p.doi ? `<a class="doi-link" href="https://doi.org/${p.doi}" target="_blank" rel="noopener" onclick="event.stopPropagation()">DOI →</a>` : '<span style="color:#94a3b8;font-size:11px">—</span>';
+  const doiCell = p.doi ? `<a class="doi-link" href="https://doi.org/${p.doi}" target="_blank" rel="noopener" onclick="event.stopPropagation()">${p.doi}</a>` : '<span style="color:#94a3b8;font-size:11px">—</span>';
   const pendingBadge = p.isStored ? `<span class="pending-badge">⏳</span> ` : '';
   const editBtns = p.isStored ? `<button class="btn-edit-paper" title="編集" onclick="event.stopPropagation();editPaper(${p.id})">✏️</button><button class="btn-delete-paper" title="削除" onclick="event.stopPropagation();deletePaper(${p.id})">🗑️</button>` : '';
   return `<tr onclick="openModal(${p.id})">
