@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>高分子材料学研究室 論文データベース | 東京大学</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%231d4ed8'/><defs><linearGradient id='p' x1='0' y1='0' x2='0' y2='1'><stop offset='0%25' stop-color='%23fb7eb9'/><stop offset='100%25' stop-color='%23c026d3'/></linearGradient><linearGradient id='b' x1='0' y1='0' x2='0' y2='1'><stop offset='0%25' stop-color='%237dd3fc'/><stop offset='100%25' stop-color='%233b82f6'/></linearGradient></defs><path d='M16,3 C9,3 9,13 16,13' stroke='url(%23b)' stroke-width='2' stroke-opacity='0.7' fill='none' stroke-linecap='round'/><path d='M16,3 C23,3 23,13 16,13' stroke='url(%23p)' stroke-width='2.5' fill='none' stroke-linecap='round'/><line x1='10' y1='7' x2='16' y2='7' stroke='%2393c5fd' stroke-width='1.2' stroke-opacity='0.7'/><line x1='16' y1='7' x2='22' y2='7' stroke='%23f9a8d4' stroke-width='1.5'/><path d='M16,13 C9,13 9,23 16,23' stroke='url(%23p)' stroke-width='2' stroke-opacity='0.7' fill='none' stroke-linecap='round'/><path d='M16,13 C23,13 23,23 16,23' stroke='url(%23b)' stroke-width='2.5' fill='none' stroke-linecap='round'/><line x1='10' y1='17' x2='16' y2='17' stroke='%23f9a8d4' stroke-width='1.2' stroke-opacity='0.7'/><line x1='16' y1='17' x2='22' y2='17' stroke='%2393c5fd' stroke-width='1.5'/><path d='M16,23 C9,23 9,32 16,32' stroke='url(%23b)' stroke-width='2' stroke-opacity='0.7' fill='none' stroke-linecap='round'/><path d='M16,23 C23,23 23,32 16,32' stroke='url(%23p)' stroke-width='2.5' fill='none' stroke-linecap='round'/><line x1='10' y1='27' x2='16' y2='27' stroke='%2393c5fd' stroke-width='1.2' stroke-opacity='0.7'/><line x1='16' y1='27' x2='22' y2='27' stroke='%23f9a8d4' stroke-width='1.5'/><circle cx='16' cy='3' r='2' fill='white' opacity='0.9'/><circle cx='16' cy='13' r='2.2' fill='white'/><circle cx='16' cy='23' r='2.2' fill='white'/></svg>">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="https://d3js.org/d3.v7.min.js"></script>
 <style>
@@ -552,8 +553,8 @@ main { max-width: 1400px; margin: 0 auto; padding: 28px 24px 60px; }
         <button class="btn btn-merge hidden" id="btn-merge" style="width:100%;font-size:12px;padding:8px" onclick="downloadMergedHTML()">
           📥 HTMLに統合 <span id="merge-count" class="merge-badge">0</span>
         </button>
-        <button class="btn-gh-setup" id="btn-gh-setup" onclick="openGitHubSettings()">⚙️ GitHub連携設定</button>
-        <div class="action-note" style="font-size:11px;color:#64748b;line-height:1.6;background:#f8fafc;border:1px solid var(--border);border-radius:6px;padding:7px 10px;margin-top:2px"><div>📝 パスワードを知っている方は論文の追加・編集ができます。「GitHubに反映」を押すとwebページが全員に更新されます。</div><div style="margin-top:4px;padding-top:4px;border-top:1px solid var(--border)">📦 <strong>一括論文取り込み</strong>は管理者にご連絡ください。</div></div>
+        <button class="btn-gh-setup hidden" id="btn-gh-setup" onclick="openGitHubSettings()">⚙️ GitHub連携設定</button>
+        <div style="font-size:11px;color:#94a3b8;line-height:1.6;margin-top:2px">一括取り込みは管理者にお問い合わせください。</div>
       </div>
     </div>
 
@@ -566,7 +567,10 @@ main { max-width: 1400px; margin: 0 auto; padding: 28px 24px 60px; }
         </div>
         <div class="chart-card">
           <h3>🔬 研究分野別論文数</h3>
-          <div id="area-tree-dash" class="atd-wrap"></div>
+          <div style="display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap">
+            <div style="flex:0 0 220px"><canvas id="chart-areas" style="max-height:220px"></canvas></div>
+            <div style="flex:1;min-width:200px"><div id="area-tree-dash" class="atd-wrap"></div></div>
+          </div>
         </div>
       </div>
       <div class="dash-side" id="dash-side">
@@ -1171,6 +1175,9 @@ const AREA_DEFS = {
 
 function getArea(title, journal) {
   const t = (title + ' ' + journal).toLowerCase();
+  // リグニンは芳香族バイオポリマー — polysaccharideキーワードより先にチェック
+  // (例: "roles of polysaccharides" を含むリグニン論文の誤分類を防ぐ)
+  if (/\blignin\b|リグニン/.test(t)) return '芳香族';
   // 多糖 takes priority over PHA to avoid "polysaccharide...hydroxyl" misclassification
   if (/curdlan|paramylon|glucan|xylan|glucomannan|dextran|nigeran|chitosan|chitin|pullulan|polysaccharide|cellulose|alginat|sophorose|多糖|セルロース|キチン|キトサン|アルギン酸|デキストラン|プルラン|グルコマンナン|パラミロン|カードラン|ニゲラン/.test(t)) return '多糖';
   if (/polyhydroxyalk|p\(3hb|p\[.*3h[bvh]|pha\b|hydroxybutyrate|hydroxyvalerate|hydroxyhexanoate|hydroxyalkanoate|phbv|\b3hb\b|\b4hb\b|\b3hv\b|\b3hh\b/.test(t)) return 'PHA';
@@ -1463,7 +1470,26 @@ function initCharts() {
     }
   });
 
-  // chart-areas replaced by renderDashAreaTree()
+  const areaCounts = {};
+  ORIG.forEach(p=>{ areaCounts[p.area]=(areaCounts[p.area]||0)+1; });
+  const areaKeys = Object.keys(AREA_DEFS);
+  charts.areas = new Chart(document.getElementById('chart-areas'),{
+    type:'doughnut',
+    data:{
+      labels: areaKeys.map(k=>AREA_DEFS[k].label),
+      datasets:[{data:areaKeys.map(k=>areaCounts[k]||0), backgroundColor:areaKeys.map(k=>AREA_DEFS[k].color), borderWidth:2, borderColor:'#fff'}]
+    },
+    options:{
+      responsive:true,
+      plugins:{legend:{display:false}},
+      onClick(_,els){
+        if(!els.length) return;
+        const areaKey = areaKeys[els[0].index];
+        const node = document.getElementById('atd-'+areaKey);
+        if(node){ node.classList.add('open'); node.scrollIntoView({behavior:'smooth',block:'nearest'}); }
+      }
+    }
+  });
 
   const areaList = Object.keys(AREA_DEFS);
   charts.trend = new Chart(document.getElementById('chart-trend'),{
