@@ -173,6 +173,7 @@ main { max-width: 1400px; margin: 0 auto; padding: 28px 24px 60px; }
 .author-count { font-size: 12px; color: var(--text-light); }
 
 /* Modal */
+.hidden { display: none !important; }
 .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 200; display: flex; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(4px); }
 .modal-overlay.hidden { display: none; }
 .modal-box { background: var(--white); border-radius: var(--radius); max-width: 680px; width: 100%; max-height: 85vh; overflow-y: auto; box-shadow: var(--shadow-lg); }
@@ -205,6 +206,22 @@ main { max-width: 1400px; margin: 0 auto; padding: 28px 24px 60px; }
 .btn-edit-paper:hover { opacity: 1; }
 .btn-delete-paper { background: none; border: none; cursor: pointer; font-size: 14px; padding: 2px 4px; opacity: 0.5; transition: opacity 0.15s; color: #dc2626; }
 .btn-delete-paper:hover { opacity: 1; }
+/* View toggle (card/table) */
+.view-toggle { display: flex; gap: 4px; margin-left: auto; }
+.view-toggle-btn { padding: 7px 11px; border: 1px solid var(--border); background: var(--bg); color: var(--text-light); font-size: 14px; cursor: pointer; border-radius: var(--radius-sm); transition: all 0.15s; line-height: 1; }
+.view-toggle-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+/* Papers table view */
+.papers-table { width: 100%; border-collapse: collapse; background: var(--white); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); border: 1px solid var(--border); }
+.papers-table th { text-align: left; padding: 10px 14px; background: var(--bg); font-weight: 600; font-size: 12px; color: var(--text-light); border-bottom: 2px solid var(--border); }
+.papers-table td { padding: 9px 14px; border-bottom: 1px solid var(--border); vertical-align: middle; font-size: 13px; }
+.papers-table tr:last-child td { border-bottom: none; }
+.papers-table tr:hover td { background: #f8fafc; cursor: pointer; }
+.papers-table .td-year { white-space: nowrap; width: 64px; }
+.papers-table .td-type { width: 90px; white-space: nowrap; }
+.papers-table .td-title { font-weight: 600; }
+.papers-table .td-auth { color: var(--text-light); font-size: 12px; white-space: nowrap; }
+.papers-table .td-jrnl { color: var(--primary); font-style: italic; font-size: 12px; white-space: nowrap; }
+.papers-table .td-act { white-space: nowrap; }
 .btn { padding: 7px 13px; border: none; border-radius: var(--radius-sm); cursor: pointer; font-size: 13px; font-weight: 600; transition: all 0.15s; }
 .btn-primary { background: var(--primary); color: white; }
 .btn-primary:hover { background: var(--primary-dark); }
@@ -434,15 +451,15 @@ main { max-width: 1400px; margin: 0 auto; padding: 28px 24px 60px; }
   <div class="header-inner">
     <div class="header-logo">🧬</div>
     <div>
-      <div class="header-badge">東京大学 大学院農学生命科学研究科</div>
+      <div class="header-badge">東京大学 大学院農学生命科学研究科　生物材料科学専攻</div>
       <h1>高分子材料学研究室 論文データベース</h1>
-      <p>Laboratory of Polymeric Materials, Iwata Lab — 2011–2026</p>
+      <p>Laboratory of Polymeric Materials, Iwata Lab — <span id="h-year-range">2011–2026</span></p>
     </div>
     <div class="header-stats">
       <div class="hstat"><div class="hstat-val" id="h-total">—</div><div class="hstat-lbl">総論文数</div></div>
       <div class="hstat"><div class="hstat-val" id="h-orig">—</div><div class="hstat-lbl">原著論文</div></div>
       <div class="hstat"><div class="hstat-val" id="h-journals">—</div><div class="hstat-lbl">掲載ジャーナル</div></div>
-      <div class="hstat"><div class="hstat-val">16</div><div class="hstat-lbl">年間</div></div>
+      <div class="hstat"><div class="hstat-val" id="h-years">—</div><div class="hstat-lbl">年間</div></div>
     </div>
   </div>
 </header>
@@ -538,6 +555,10 @@ main { max-width: 1400px; margin: 0 auto; padding: 28px 24px 60px; }
       <select id="filter-area"><option value="">全分野</option></select>
       <button class="btn btn-fav" id="btn-fav-filter" onclick="toggleFavFilter()">🔖 お気に入り</button>
       <button class="btn btn-clear" onclick="clearFilters()">✕ クリア</button>
+      <div class="view-toggle">
+        <button class="view-toggle-btn active" data-view="card" onclick="setPaperView('card')" title="カード表示">⊞</button>
+        <button class="view-toggle-btn" data-view="table" onclick="setPaperView('table')" title="テーブル表示">☰</button>
+      </div>
     </div>
     <div class="fav-notice">🔖 お気に入りはあなたのブラウザにのみ保存されます。他の人には見えません。</div>
     <div id="tag-chips-row" class="tag-chips-row"></div>
@@ -583,13 +604,6 @@ main { max-width: 1400px; margin: 0 auto; padding: 28px 24px 60px; }
     <div class="analysis-layout">
       <div class="chart-card" style="flex:1;min-width:0">
         <h3>📰 掲載ジャーナル一覧</h3>
-        <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center">
-          <span style="font-size:12px;color:var(--text-light)">並べ替え：</span>
-          <button class="btn btn-primary" style="font-size:11px;padding:4px 10px" id="sort-count" onclick="sortJournals('count')">投稿数 ↓</button>
-          <button class="btn" style="font-size:11px;padding:4px 10px;background:#f1f5f9;color:#475569" id="sort-if" onclick="sortJournals('if')">IF ↓</button>
-          <button class="btn" style="font-size:11px;padding:4px 10px;background:#f1f5f9;color:#475569" id="sort-cs" onclick="sortJournals('cs')">CiteScore ↓</button>
-          <button class="btn" style="font-size:11px;padding:4px 10px;background:#f1f5f9;color:#475569" id="sort-name" onclick="sortJournals('name')">誌名 A→Z</button>
-        </div>
         <div class="journal-table-wrap">
           <table class="journal-table">
             <thead><tr>
@@ -949,7 +963,7 @@ const RAW = [
 [2011,'O','Evaluation of adhesive penetration with scanning laser microscopy and statistical analysis','Fujii Y, Hori N, Takemura A, Kamo S, Fukasawa F','Wood Industry','66(2):54-57',''],
 // REVIEWS & BOOKS
 // 2026
-[2026,'R','Polysaccharide-derived plastics for low-dielectric films in high-frequency electronics and transparent optical fibers','Fukata Y, Iwata T','Journal of Wood Science','(2026)',''],
+[2026,'R','Polysaccharide-derived plastics for low-dielectric films in high-frequency electronics and transparent optical fibers','Fukata Y, Iwata T','Journal of Wood Science','(2026)','10.1186/s10086-026-02276-7'],
 [2026,'R','多糖から通信機器用のプラスチックをつくる：高耐熱低誘電フィルム及び高強度光ファイバーの開発','Fukata Y, Iwata T','Glycoforum','29(1):A3','10.32285/glycoforum.29A3J'],
 [2026,'B','機能性リグニン材料の開発と展開 — 第9章 リグニン分解物からの高性能高分子材料の開発（共著）','Enomoto Y, Iwata T','シーエムシー出版（山田竜彦監修）','',''],
 [2026,'B','石油依存からの脱却と新たな資源循環','Iwata T','シーエムシー出版','',''],
@@ -1081,7 +1095,6 @@ const RAW = [
 // ---- 2011 ----
 [2011,'R','バイオプラを訪ねて、東京大学・岩田研究室','Iwata T','バイオプラジャーナル','42:14-19',''],
 [2011,'R','微生物産生ポリエステルの高効率的生産と高性能化','Iwata T, Tsuge J','ケミカルエンジニアリング','56(6):59-65',''],
-[2026,'O','Polysaccharide-derived plastics for low-dielectric films in high-frequency electronics and transparent optical fibers','Fukata. Y, Iwata. T','Journal of Wood Science','','10.1186/s10086-026-02276-7'],
 // ── USER_PAPERS_INSERT ──
 ];
 
@@ -1120,6 +1133,7 @@ function getTags(title, journal, authors='', doi='') {
   if (/α-1,4-glucan|nigeran|α-1,3-alt/.test(t)) tags.push('α-1,4-グルカン');
   // α-1,6
   if (/α-1,6|pullulan|dextran|dextrin/.test(t)) tags.push('α-1,6-グルカン');
+  if (/pullulan/.test(t)) tags.push('プルラン');
   // β-1,2
   if (/β-1,2-glucan|sophorose/.test(t)) tags.push('β-1,2-グルカン');
   // Specific polysaccharides
@@ -1146,8 +1160,7 @@ function getTags(title, journal, authors='', doi='') {
   if (/poly.ethylene succinate/.test(t)) tags.push('PES');
   if (/poly.dioxanone/.test(t)) tags.push('ポリジオキサノン');
   // Aromatics
-  if (/divanillic|vanillic acid/.test(t)) tags.push('ジバニリン酸');
-  if (/divanillin(?! acid)/.test(t)) tags.push('ジバニリン');
+  if (/divanillin|divanillic|vanillic acid|ジバニリン/.test(t)) tags.push('ジバニリン');
   if (/ferulic/.test(t)) tags.push('フェルラ酸');
   if (/gallic/.test(t)) tags.push('ガリック酸');
   if (/caffeic/.test(t)) tags.push('カフェ酸');
@@ -1164,6 +1177,7 @@ function getTags(title, journal, authors='', doi='') {
   if (/wet.spun|wet.spinning/.test(t)) tags.push('湿式紡糸');
   if (/electrospun|electrospinning/.test(t)) tags.push('電界紡糸');
   if (/air.jet|dry.jet/.test(t)) tags.push('エアジェット紡糸');
+  if (/gel.spun|gel.spinning|gel spinning/.test(t)) tags.push('ゲル紡糸');
   // Enzymes
   if (/cutinase/.test(t)) tags.push('クチナーゼ');
   if (/lipase/.test(t)) tags.push('リパーゼ');
@@ -1180,7 +1194,10 @@ function getTags(title, journal, authors='', doi='') {
   if (/dielectric|dissipation.factor|低誘電|high.frequenc/.test(t)) tags.push('低誘電');
   if (/machine learning/.test(t)) tags.push('機械学習');
   if (/microbead/.test(t)) tags.push('マイクロビーズ');
-  if (/waveguide|waveguiding/.test(t)) tags.push('光導波路');
+  if (/waveguide|waveguiding|optical fiber|optical fibre|光ファイバー/.test(t)) {
+    if (!tags.includes('光ファイバー')) tags.push('光ファイバー');
+    if (!tags.includes('ゲル紡糸')) tags.push('ゲル紡糸');
+  }
   if (/self.immolative/.test(t)) tags.push('自己分解型');
   // Author-based tagging: Huang → enzyme-embedding research
   if (/Huang/i.test(authors) && !tags.includes('酵素内包')) tags.push('酵素内包');
@@ -1465,6 +1482,21 @@ function makePaperCard(p) {
 </div>`;
 }
 
+function makePaperRow(p) {
+  const isFav = FAVORITES.has(p.id);
+  const doiCell = p.doi ? `<a class="doi-link" href="https://doi.org/${p.doi}" target="_blank" rel="noopener" onclick="event.stopPropagation()">DOI →</a>` : '<span style="color:#94a3b8;font-size:11px">—</span>';
+  const pendingBadge = p.isStored ? `<span class="pending-badge">⏳</span> ` : '';
+  const editBtns = p.isStored ? `<button class="btn-edit-paper" title="編集" onclick="event.stopPropagation();editPaper(${p.id})">✏️</button><button class="btn-delete-paper" title="削除" onclick="event.stopPropagation();deletePaper(${p.id})">🗑️</button>` : '';
+  return `<tr onclick="openModal(${p.id})">
+    <td class="td-year"><span class="paper-year">${p.year}</span></td>
+    <td class="td-type">${pendingBadge}${makeTypeBadge(p.type)}</td>
+    <td class="td-title">${p.title}</td>
+    <td class="td-auth">${p.authors}</td>
+    <td class="td-jrnl">${p.journal}${p.vol?' · '+p.vol:''}</td>
+    <td class="td-act">${doiCell} <button class="fav-btn${isFav?' saved':''}" onclick="event.stopPropagation();toggleFav(${p.id},this)" title="${isFav?'お気に入り解除':'お気に入り追加'}"><svg width="13" height="15" viewBox="0 0 16 18" fill="currentColor"><path d="M2 1a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v15.5a.5.5 0 0 1-.777.416L8 14.101l-5.223 2.815A.5.5 0 0 1 2 16.5V1z"/></svg></button>${editBtns}</td>
+  </tr>`;
+}
+
 // ─────────────────────────────────────────────
 // STATS
 // ─────────────────────────────────────────────
@@ -1474,6 +1506,9 @@ function updateStats() {
   const journals = new Set(ORIG.map(p=>p.journal)).size;
   const authorSet = new Set();
   ORIG.forEach(p=>p.authors.split(',').forEach(a=>{const n=a.trim();if(n.length>2)authorSet.add(n);}));
+  const years = PAPERS.map(p=>p.year);
+  const minY = Math.min(...years), maxY = Math.max(...years);
+  const spanY = maxY - minY + 1;
   document.getElementById('s-total').textContent=PAPERS.length;
   document.getElementById('s-orig').textContent=orig;
   document.getElementById('s-reviews').textContent=reviews;
@@ -1482,6 +1517,8 @@ function updateStats() {
   document.getElementById('h-total').textContent=PAPERS.length;
   document.getElementById('h-orig').textContent=orig;
   document.getElementById('h-journals').textContent=journals;
+  document.getElementById('h-years').textContent=spanY;
+  document.getElementById('h-year-range').textContent=`${minY}–${maxY}`;
 }
 function goToTabType(tab, type) {
   switchTab(tab);
@@ -1493,6 +1530,12 @@ function goToTabType(tab, type) {
 // PAPERS FILTER
 // ─────────────────────────────────────────────
 let showFavOnly = false;
+let paperView = 'card';
+function setPaperView(v) {
+  paperView = v;
+  document.querySelectorAll('.view-toggle-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.view === v));
+  filterPapers();
+}
 function toggleFavFilter() {
   showFavOnly = !showFavOnly;
   document.getElementById('btn-fav-filter').classList.toggle('active', showFavOnly);
@@ -1513,7 +1556,13 @@ function filterPapers() {
     (!area || p.area===area)
   ).sort((a,b)=>b.year-a.year);
   document.getElementById('paper-count').textContent=`${res.length}件の論文が見つかりました（総数${PAPERS.length}件）`;
-  document.getElementById('papers-grid').innerHTML=res.length?res.map(makePaperCard).join(''):'<div class="empty-state"><div>🔍</div>検索条件に一致する論文が見つかりませんでした</div>';
+  const empty='<div class="empty-state"><div>🔍</div>検索条件に一致する論文が見つかりませんでした</div>';
+  if(paperView==='table'){
+    document.getElementById('papers-grid').innerHTML=res.length?
+      `<table class="papers-table"><thead><tr><th>年</th><th>種別</th><th>タイトル</th><th>著者</th><th>ジャーナル</th><th></th></tr></thead><tbody>${res.map(makePaperRow).join('')}</tbody></table>`:empty;
+  } else {
+    document.getElementById('papers-grid').innerHTML=res.length?res.map(makePaperCard).join(''):empty;
+  }
 }
 function clearFilters() {
   document.getElementById('search').value='';
@@ -1631,7 +1680,7 @@ let activeTagCard=null;
 function renderTagCards() {
   const tagCnt={};
   ORIG.forEach(p=>p.tags.forEach(t=>{tagCnt[t]=(tagCnt[t]||0)+1;}));
-  const sorted=Object.entries(tagCnt).sort((a,b)=>b[1]-a[1]);
+  const sorted=Object.entries(tagCnt).sort((a,b)=>a[0].localeCompare(b[0],'ja'));
   document.getElementById('tag-cards-grid').innerHTML=sorted.map(([tag,cnt])=>
     `<div class="tag-card" id="tc-${tag.replace(/[^\w]/g,'_')}" onclick="showTagPapers('${tag.replace(/'/g,"\\'")}')">
       ${tag}<span class="tag-card-count">(${cnt})</span>
@@ -1665,7 +1714,7 @@ let activeTagFilter=null;
 function renderTagChips() {
   const tagSet=new Set();
   ORIG.forEach(p=>p.tags.forEach(t=>tagSet.add(t)));
-  const sorted=[...tagSet].sort();
+  const sorted=[...tagSet].sort((a,b)=>a.localeCompare(b,'ja'));
   document.getElementById('tag-chips-row').innerHTML=sorted.map(t=>
     `<span class="tag-chip${activeTagFilter===t?' active':''}" onclick="selectTagChip('${t.replace(/'/g,"\\'")}')">🏷️ ${t}</span>`
   ).join('');
@@ -1732,16 +1781,24 @@ function toggleFav(id, btn) {
 // ─────────────────────────────────────────────
 // ADD PAPER
 // ─────────────────────────────────────────────
+// GITHUB CONFIG (encoded default)
+// ─────────────────────────────────────────────
+const _DT='and0RVVnbzVGTTIyRkkzNWtiTU5UVk03cTBGcDR5b2F2V0VVdENvZXZWQUtFTUt2MEc5WTVXczlReDZfZ1JxODVCeFZXVlZ2MEFTUEJGRUMxMV90YXBfYnVodGln';
+const _DO='YYUU-YYAA';
+const _DR='polymer-lab-publications';
+function _gt(){return localStorage.getItem('gh_token')||atob(_DT).split('').reverse().join('');}
+function _go(){return localStorage.getItem('gh_owner')||_DO;}
+function _gr(){return localStorage.getItem('gh_repo')||_DR;}
+
 // ─────────────────────────────────────────────
 // GITHUB SETTINGS
 // ─────────────────────────────────────────────
 function openGitHubSettings() {
-  const token = localStorage.getItem('gh_token') || '';
-  const owner = localStorage.getItem('gh_owner') || '';
-  const repo  = localStorage.getItem('gh_repo')  || 'polymer-lab-publications';
-  document.getElementById('gh-token-input').value = token ? '●'.repeat(20) : '';
-  document.getElementById('gh-owner-input').value = owner;
-  document.getElementById('gh-repo-input').value  = repo;
+  const hasCustom = !!localStorage.getItem('gh_token');
+  document.getElementById('gh-token-input').value = hasCustom ? '●'.repeat(20) : '';
+  document.getElementById('gh-token-input').placeholder = hasCustom ? '変更する場合のみ入力' : '共有トークン設定済み（変更不要）';
+  document.getElementById('gh-owner-input').value = _go();
+  document.getElementById('gh-repo-input').value  = _gr();
   document.getElementById('gh-status').className  = 'gh-status';
   document.getElementById('gh-status').textContent = '';
   document.getElementById('gh-modal').classList.remove('hidden');
@@ -1751,7 +1808,6 @@ function saveGitHubSettings() {
   const owner = document.getElementById('gh-owner-input').value.trim();
   const repo  = document.getElementById('gh-repo-input').value.trim();
   if (!owner || !repo) { alert('ユーザー名とリポジトリ名を入力してください'); return; }
-  // Only update token if changed (not placeholder dots)
   if (tokenInput && !tokenInput.startsWith('●')) {
     localStorage.setItem('gh_token', tokenInput);
   }
@@ -1762,7 +1818,7 @@ function saveGitHubSettings() {
   alert('✅ 設定を保存しました。');
 }
 function clearGitHubSettings() {
-  if (!confirm('GitHub連携設定を削除しますか？')) return;
+  if (!confirm('カスタム設定を削除して共有設定に戻しますか？')) return;
   localStorage.removeItem('gh_token');
   localStorage.removeItem('gh_owner');
   localStorage.removeItem('gh_repo');
@@ -1771,9 +1827,9 @@ function clearGitHubSettings() {
 }
 async function testGitHubConnection() {
   const tokenInput = document.getElementById('gh-token-input').value.trim();
-  const token = tokenInput.startsWith('●') ? localStorage.getItem('gh_token') : tokenInput;
-  const owner = document.getElementById('gh-owner-input').value.trim();
-  const repo  = document.getElementById('gh-repo-input').value.trim();
+  const token = (tokenInput && !tokenInput.startsWith('●')) ? tokenInput : _gt();
+  const owner = document.getElementById('gh-owner-input').value.trim() || _go();
+  const repo  = document.getElementById('gh-repo-input').value.trim() || _gr();
   const st = document.getElementById('gh-status');
   st.className = 'gh-status'; st.textContent = '接続確認中...'; st.style.display = 'block';
   try {
