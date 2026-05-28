@@ -187,6 +187,22 @@ main { max-width: 1400px; margin: 0 auto; padding: 28px 24px 60px; }
 .modal-value { font-size: 13px; color: var(--text); }
 .modal-doi-btn { display: inline-flex; align-items: center; gap: 6px; margin-top: 16px; padding: 10px 20px; background: var(--primary); color: white; border-radius: var(--radius-sm); text-decoration: none; font-size: 14px; font-weight: 600; }
 .modal-doi-btn:hover { background: var(--primary-dark); }
+.modal-abstract-section { margin-top: 16px; border-top: 1px solid var(--border); padding-top: 16px; }
+.modal-abstract-title { font-size: 12px; font-weight: 600; color: var(--text-light); margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+.modal-abstract-text { font-size: 13px; color: var(--text); line-height: 1.6; }
+.modal-abstract-disclaimer { font-size: 11px; color: var(--text-light); margin-top: 6px; font-style: italic; }
+.modal-abstract-btn { font-size: 12px; padding: 4px 10px; border-radius: 4px; border: 1px solid var(--border); background: var(--bg); color: var(--text); cursor: pointer; }
+.modal-abstract-btn:hover { background: var(--primary); color: white; border-color: var(--primary); }
+.modal-abstract-textarea { width: 100%; box-sizing: border-box; font-size: 13px; color: var(--text); line-height: 1.6; border: 1px solid var(--primary); border-radius: 4px; padding: 8px; resize: vertical; min-height: 100px; font-family: inherit; }
+
+/* AI Search */
+.btn-ai { background: #ede9fe; color: #5b21b6; }
+.btn-ai.active { background: #6366f1; color: white; }
+.ai-search-panel { background: var(--white); border-radius: var(--radius); padding: 18px 20px; margin-bottom: 14px; border: 2px solid #6366f1; }
+.ai-search-input { width: 100%; box-sizing: border-box; padding: 10px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 14px; font-family: inherit; resize: none; height: 50px; line-height: 1.4; }
+.ai-search-input:focus { outline: none; border-color: #6366f1; }
+.ai-run-btn { background: #6366f1; color: white; border: none; border-radius: var(--radius-sm); padding: 10px 20px; font-size: 14px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+.ai-run-btn:hover { background: #4f46e5; }
 
 /* Section title */
 .section-title { font-size: 20px; font-weight: 700; margin-bottom: 20px; color: var(--text); padding-bottom: 10px; border-bottom: 2px solid var(--border); }
@@ -555,9 +571,17 @@ main { max-width: 1400px; margin: 0 auto; padding: 28px 24px 60px; }
       </select>
       <select id="filter-area"><option value="">全分野</option></select>
       <button class="btn btn-fav" id="btn-fav-filter" onclick="toggleFavFilter()">🔖 お気に入り</button>
+      <button class="btn btn-ai" id="btn-ai-toggle" onclick="toggleAISearch()">🤖 AIで探す</button>
       <button class="btn btn-clear" onclick="clearFilters()">✕ クリア</button>
     </div>
     <div class="fav-notice">🔖 お気に入りはあなたのブラウザにのみ保存されます。他の人には見えません。</div>
+    <div id="ai-search-panel" class="ai-search-panel" style="display:none">
+      <div style="display:flex;gap:10px;align-items:flex-start">
+        <textarea id="ai-query" class="ai-search-input" placeholder="「PHAの最近の研究は？」「光を通す繊維の論文」「2025年の多糖関連」「生分解性ポリマー全部」などと入力"></textarea>
+        <button class="ai-run-btn" onclick="runAISearch()">🔍 探す</button>
+      </div>
+      <div id="ai-results"></div>
+    </div>
     <div id="tag-chips-row" class="tag-chips-row"></div>
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
       <div class="paper-count" id="paper-count" style="margin-bottom:0"></div>
@@ -670,6 +694,7 @@ main { max-width: 1400px; margin: 0 auto; padding: 28px 24px 60px; }
         <div class="modal-row"><span class="modal-label">タグ</span><span class="modal-value" id="modal-content-tags"></span></div>
       </div>
       <div id="modal-doi-section"></div>
+      <div id="modal-abstract-section" class="modal-abstract-section" style="display:none"></div>
     </div>
   </div>
 </div>
@@ -2144,10 +2169,198 @@ function openModal(id) {
   document.getElementById('modal-content-tags').innerHTML=p.tags.map(t=>`<span class="tag-content">${t}</span>`).join(' ')||'—';
   document.getElementById('modal-doi-section').innerHTML=p.doi
     ?`<a class="modal-doi-btn" href="https://doi.org/${p.doi}" target="_blank" rel="noopener">🔗 出版社ページを開く (DOI: ${p.doi})</a>`:'';
+  renderAbstractSection(p.doi||null);
   document.getElementById('modal').classList.remove('hidden');
 }
 function closeModal(e){if(e.target===document.getElementById('modal'))document.getElementById('modal').classList.add('hidden');}
+// ─────────────────────────────────────────────
+// ABSTRACT (CrossRef API)
+// ─────────────────────────────────────────────
+function getAbstractStore(){return JSON.parse(localStorage.getItem('polymer_abstracts')||'{}');}
+function saveAbstractStore(obj){localStorage.setItem('polymer_abstracts',JSON.stringify(obj));}
+function escHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 
+function renderAbstractSection(doi){
+  const sec=document.getElementById('modal-abstract-section');
+  if(!sec)return;
+  if(!doi){sec.style.display='none';return;}
+  sec.style.display='block';
+  const store=getAbstractStore();
+  const entry=store[doi];
+  if(entry){
+    sec.innerHTML=abstractViewHTML(doi,entry.text,entry.edited);
+  } else {
+    const safeD=doi.replace(/\x27/g,"\\\\'");
+    sec.innerHTML='<div class="modal-abstract-title">\u{1F4C4} アブストラクト <button class="modal-abstract-btn" id="abs-fetch-btn" onclick="fetchAndShowAbstract(\''+safeD+'\')">取得する</button></div>';
+  }
+}
+
+async function fetchAndShowAbstract(doi){
+  const btn=document.getElementById('abs-fetch-btn');
+  if(btn){btn.textContent='取得中…';btn.disabled=true;}
+  try{
+    const res=await fetch('https://api.crossref.org/works/'+encodeURIComponent(doi));
+    if(!res.ok)throw new Error('HTTP '+res.status);
+    const data=await res.json();
+    let text=(data.message&&data.message.abstract)||'';
+    text=text.replace(/<[^>]+>/g,'').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&amp;/g,'&').trim();
+    if(!text)text='（このDOIにはアブストラクトが登録されていません）';
+    const store=getAbstractStore();
+    store[doi]={text:text,edited:false};
+    saveAbstractStore(store);
+    const sec=document.getElementById('modal-abstract-section');
+    if(sec)sec.innerHTML=abstractViewHTML(doi,text,false);
+  }catch(e){
+    const sec=document.getElementById('modal-abstract-section');
+    if(sec)sec.innerHTML='<div class="modal-abstract-title">\u{1F4C4} アブストラクト</div><div class="modal-abstract-text" style="color:#ef4444">取得に失敗しました。ネットワークを確認してください。</div>';
+  }
+}
+
+function abstractViewHTML(doi,text,edited){
+  const safeD=doi.replace(/\x27/g,"\\\\'");
+  const badge=edited?'<span style="font-size:11px;color:#0369a1;background:#e0f2fe;padding:2px 6px;border-radius:4px;font-weight:600">編集済</span>':'';
+  return '<div class="modal-abstract-title">\u{1F4C4} アブストラクト '+badge+'<button class="modal-abstract-btn" style="margin-left:auto" onclick="startEditAbstract(\''+safeD+'\')">✏️ 編集</button></div>'
+    +'<div class="modal-abstract-text">'+escHtml(text)+'</div>'
+    +'<div class="modal-abstract-disclaimer">※ CrossRef APIから自動取得。内容に誤りが含まれる場合があります。</div>';
+}
+
+function startEditAbstract(doi){
+  const store=getAbstractStore();
+  const text=(store[doi]&&store[doi].text)||'';
+  const safeD=doi.replace(/\x27/g,"\\\\'");
+  const sec=document.getElementById('modal-abstract-section');
+  if(!sec)return;
+  sec.innerHTML='<div class="modal-abstract-title">\u{1F4C4} アブストラクト（編集中）</div>'
+    +'<textarea class="modal-abstract-textarea" id="abs-edit-area">'+escHtml(text)+'</textarea>'
+    +'<div style="display:flex;gap:8px;margin-top:8px">'
+    +'<button class="modal-abstract-btn" style="background:var(--primary);color:white;border-color:var(--primary)" onclick="commitEditAbstract(\''+safeD+'\')">💾 保存</button>'
+    +'<button class="modal-abstract-btn" onclick="renderAbstractSection(\''+safeD+'\')">キャンセル</button>'
+    +'</div>';
+}
+
+function commitEditAbstract(doi){
+  const ta=document.getElementById('abs-edit-area');
+  if(!ta)return;
+  const text=ta.value;
+  const store=getAbstractStore();
+  store[doi]={text:text,edited:true};
+  saveAbstractStore(store);
+  const sec=document.getElementById('modal-abstract-section');
+  if(sec)sec.innerHTML=abstractViewHTML(doi,text,true);
+}
+
+// ─────────────────────────────────────────────
+// AI SEARCH (Client-side, no API key needed)
+// ─────────────────────────────────────────────
+const AI_CONCEPTS = {
+  'PHA':        ['pha','polyhydroxyalk','p(3hb','phbv','phb','php','phbh','polyhydroxy','microbial polyester','poly(3-hydroxy'],
+  '微生物':     ['bacteria','microbial','ferment','biosynthes','bacterial','microorganism'],
+  '生分解':     ['biodegradable','biodegradation','decompos','compost','degradable'],
+  '多糖':       ['polysaccharide','cellulose','chitin','chitosan','glucan','pullulan','curdlan','dextran','xylan','alginate','nigeran','glucomannan','sophorose'],
+  'セルロース': ['cellulose','bacterial cellulose','nanocellulose','microfibrillated'],
+  'キチン':     ['chitin','chitosan','n-acetyl'],
+  'プルラン':   ['pullulan'],
+  '芳香族':     ['aromatic','vanillin','vanillic','ferulic','gallic','caffeic','cardanol','anthraquin','biphenyl','divanillin'],
+  'バイオベース':['bio-based','biobased','renewable','biomass','plant-derived','lignocellulose','lignin'],
+  '繊維':       ['fiber','fibre','spinning','filament','thread','spun','textile'],
+  '光ファイバー':['optical fiber','optical fibre','waveguide'],
+  'ゲル紡糸':   ['gel spinning','gel-spun','gel-spinning'],
+  '強度':       ['mechanical','tensile','strength','modulus','stiffness','young','stress','strain','elongation'],
+  '低誘電':     ['dielectric','dissipation factor','low dielectric','permittivity'],
+  '結晶':       ['crystal','crystalline','crystallization','x-ray','diffraction','scattering','saxs','waxs','lamellar'],
+  '構造':       ['structure','morphology','nmr','spectroscopy','infrared','ftir'],
+  '生体適合':   ['biocompatible','biocompatibility','tissue','scaffold','implant','cell','in vitro','in vivo'],
+  '合成':       ['synthesis','polymerization','polycondensation','ring-opening','copolymer'],
+  'グラフト':   ['graft','grafting','side chain','graft copolymer'],
+  'フィルム':   ['film','membrane','sheet','casting'],
+  'ナノ':       ['nano','nanoparticle','nanofiber','nanocomposite'],
+  '岩田':       ['iwata t','iwata,'],
+  '木村':       ['kimura s','kimura,'],
+};
+
+function tokenizeQuery(q){
+  q=q.toLowerCase();
+  q=q.replace(/[？?！!。、，,.]/g,'');
+  q=q.replace(/(ある|ありますか|ください|教えて|知りたい|について|どんな|何か|みたいな|関連|関係|最近の|新しい|系の|全部|もの|から|まで)/g,' ');
+  q=q.replace(/[はがをにのでともへや]/g,' ');
+  return q.trim().split(/\s+/).filter(t=>t.length>0);
+}
+
+function expandTokens(tokens){
+  const expanded=new Set(tokens);
+  for(const [concept,synonyms] of Object.entries(AI_CONCEPTS)){
+    const cLow=concept.toLowerCase();
+    const hit=tokens.some(t=>cLow.includes(t)||t.includes(cLow)||synonyms.some(s=>t.includes(s.toLowerCase())||s.toLowerCase().includes(t)));
+    if(hit) synonyms.forEach(s=>expanded.add(s.toLowerCase()));
+  }
+  return [...expanded];
+}
+
+function scoreForAI(paper,tokens,allTerms){
+  const haystack=[paper.title,paper.journal,paper.authors,paper.tags.join(' '),paper.area,
+    (AREA_DEFS[paper.area]&&AREA_DEFS[paper.area].en)||'',(AREA_DEFS[paper.area]&&AREA_DEFS[paper.area].label)||''].join(' ').toLowerCase();
+  let score=0;
+  const matchedTerms=[];
+  // Year detection
+  for(const t of tokens){
+    const yr=parseInt(t);
+    if(yr>=2011&&yr<=2030&&paper.year===yr){score+=15;if(!matchedTerms.includes(yr+'年'))matchedTerms.push(yr+'年');}
+  }
+  // Concept key match
+  for(const [concept,synonyms] of Object.entries(AI_CONCEPTS)){
+    const cLow=concept.toLowerCase();
+    if(tokens.some(t=>t.includes(cLow)||cLow.includes(t))){
+      if(synonyms.some(s=>haystack.includes(s.toLowerCase()))){
+        score+=8;
+        if(!matchedTerms.includes(concept))matchedTerms.push(concept);
+      }
+    }
+  }
+  // Direct token match
+  for(const t of tokens){
+    if(t.length<2)continue;
+    if(paper.title.toLowerCase().includes(t)){score+=10;if(!matchedTerms.includes(t))matchedTerms.push(t);}
+    else if(haystack.includes(t)){score+=5;if(!matchedTerms.includes(t))matchedTerms.push(t);}
+  }
+  // Expanded synonyms match
+  for(const t of allTerms){
+    if(t.length<3||tokens.includes(t))continue;
+    if(haystack.includes(t))score+=3;
+  }
+  return {score,matchedTerms};
+}
+
+function toggleAISearch(){
+  const panel=document.getElementById('ai-search-panel');
+  const btn=document.getElementById('btn-ai-toggle');
+  const show=panel.style.display==='none';
+  panel.style.display=show?'block':'none';
+  btn.classList.toggle('active',show);
+  if(show)document.getElementById('ai-query').focus();
+  else document.getElementById('ai-results').innerHTML='';
+}
+
+function runAISearch(){
+  const q=document.getElementById('ai-query').value.trim();
+  if(!q)return;
+  const tokens=tokenizeQuery(q);
+  if(!tokens.length)return;
+  const allTerms=expandTokens(tokens);
+  const scored=PAPERS.map(p=>{const r=scoreForAI(p,tokens,allTerms);return{p,score:r.score,terms:r.matchedTerms};})
+    .filter(x=>x.score>0).sort((a,b)=>b.score-a.score).slice(0,20);
+  const container=document.getElementById('ai-results');
+  if(!scored.length){
+    container.innerHTML='<div style="text-align:center;color:var(--text-light);padding:24px;font-size:13px">該当する論文が見つかりませんでした。別のキーワードでお試しください。</div>';
+    return;
+  }
+  const chips=ts=>ts.map(t=>'<span style="font-size:11px;color:#6366f1;background:#ede9fe;padding:1px 7px;border-radius:10px;margin:2px 2px 0 0;display:inline-block">'+t+'</span>').join('');
+  container.innerHTML='<div style="font-size:13px;color:var(--text-light);margin:14px 0 10px;font-weight:600">🎯 '+scored.length+'件の関連論文が見つかりました</div>'
+    +scored.map(function(x){var p=x.p;return '<div style="padding:12px;border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:8px;cursor:pointer;background:var(--white)" onclick="openModal('+p.id+')" onmouseover="this.style.boxShadow=\'0 2px 8px rgba(0,0,0,.1)\'" onmouseout="this.style.boxShadow=\'\'">'
+      +'<div style="display:flex;gap:6px;align-items:baseline;flex-wrap:wrap;margin-bottom:4px"><span class="paper-year">'+p.year+'</span>'+makeTypeBadge(p.type)+(x.terms.length?chips(x.terms):'')+'</div>'
+      +'<div style="font-size:13px;font-weight:600;line-height:1.4;margin-bottom:3px">'+p.title+'</div>'
+      +'<div style="font-size:12px;color:var(--text-light)">'+p.authors+' — <em>'+p.journal+'</em></div>'
+      +'</div>';}).join('');
+}
 // ─────────────────────────────────────────────
 // TAB SWITCH
 // ─────────────────────────────────────────────
