@@ -1,0 +1,1835 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>高分子材料学研究室 論文データベース | 東京大学</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<style>
+:root {
+  --primary: #1d4ed8;
+  --primary-dark: #1e3a8a;
+  --secondary: #0f172a;
+  --accent: #059669;
+  --accent2: #d97706;
+  --bg: #f1f5f9;
+  --white: #ffffff;
+  --text: #1e293b;
+  --text-light: #64748b;
+  --border: #e2e8f0;
+  --shadow: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06);
+  --shadow-md: 0 4px 6px rgba(0,0,0,0.07), 0 2px 4px rgba(0,0,0,0.06);
+  --shadow-lg: 0 10px 15px rgba(0,0,0,0.1), 0 4px 6px rgba(0,0,0,0.05);
+  --radius: 12px;
+  --radius-sm: 8px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif; background: var(--bg); color: var(--text); font-size: 14px; line-height: 1.6; }
+
+/* Header */
+header {
+  background: linear-gradient(135deg, #0f172a 0%, #1d4ed8 100%);
+  color: white;
+  padding: 28px 32px;
+  position: sticky; top: 0; z-index: 100;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+}
+.header-inner { max-width: 1400px; margin: 0 auto; display: flex; align-items: center; gap: 20px; }
+.header-logo { font-size: 36px; }
+.header-badge { display: inline-block; font-size: 12px; font-weight: 600; letter-spacing: 0.05em; margin-bottom: 6px; opacity: 0.85; }
+header h1 { font-size: 22px; font-weight: 700; letter-spacing: -0.02em; }
+header p { font-size: 13px; opacity: 0.75; margin-top: 2px; }
+.header-stats { margin-left: auto; display: flex; gap: 24px; }
+.hstat { text-align: center; }
+.hstat-val { font-size: 26px; font-weight: 800; color: #93c5fd; }
+.hstat-lbl { font-size: 11px; opacity: 0.7; }
+
+/* Nav */
+nav {
+  background: var(--white);
+  border-bottom: 1px solid var(--border);
+  position: sticky; top: 76px; z-index: 90;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+}
+.nav-inner { max-width: 1400px; margin: 0 auto; display: flex; gap: 6px; padding: 8px 24px; overflow-x: auto; align-items: center; }
+.tab-btn {
+  padding: 10px 20px; border: none; background: none; cursor: pointer;
+  font-size: 14px; font-weight: 500; color: var(--text-light);
+  border-radius: 8px; border-bottom: none;
+  transition: all 0.18s; white-space: nowrap;
+}
+.tab-btn:hover { color: var(--primary); background: rgba(37,99,235,0.07); }
+.tab-btn.active {
+  color: #fff;
+  background: var(--primary);
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(37,99,235,0.25);
+}
+
+/* Main */
+main { max-width: 1400px; margin: 0 auto; padding: 28px 24px 60px; }
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+/* Stat cards */
+.stats-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; margin-bottom: 24px; }
+.stat-card {
+  background: var(--white); border-radius: var(--radius); padding: 20px 24px;
+  box-shadow: var(--shadow); border: 1px solid var(--border);
+  display: flex; align-items: center; gap: 16px;
+  cursor: pointer; transition: box-shadow 0.18s, border-color 0.18s, transform 0.18s;
+}
+.stat-card:hover { box-shadow: var(--shadow-md); border-color: #93c5fd; transform: translateY(-2px); }
+.stat-icon { font-size: 28px; }
+.stat-val { font-size: 30px; font-weight: 800; color: var(--primary); line-height: 1; }
+.stat-lbl { font-size: 12px; color: var(--text-light); margin-top: 2px; }
+
+/* Charts */
+.charts-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin-bottom: 24px; }
+.charts-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.chart-card {
+  background: var(--white); border-radius: var(--radius); padding: 20px 24px;
+  box-shadow: var(--shadow); border: 1px solid var(--border);
+}
+.chart-card h3 { font-size: 15px; font-weight: 600; margin-bottom: 16px; color: var(--text); }
+.chart-card canvas { max-height: 300px; }
+.chart-full { grid-column: 1/-1; }
+
+/* Filter bar */
+.filter-bar {
+  background: var(--white); border-radius: var(--radius); padding: 16px 20px;
+  box-shadow: var(--shadow); border: 1px solid var(--border);
+  display: flex; gap: 12px; flex-wrap: wrap; align-items: center;
+  margin-bottom: 16px;
+}
+.filter-bar input, .filter-bar select {
+  padding: 8px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm);
+  font-size: 14px; color: var(--text); background: var(--bg);
+  transition: border-color 0.2s;
+}
+.filter-bar input { flex: 1; min-width: 200px; }
+.filter-bar input:focus, .filter-bar select:focus { outline: none; border-color: var(--primary); }
+.filter-bar select { cursor: pointer; }
+.filter-clear { padding: 8px 14px; background: #fee2e2; border: none; border-radius: var(--radius-sm); color: #dc2626; font-size: 13px; font-weight: 600; cursor: pointer; }
+.filter-clear:hover { background: #fecaca; }
+
+/* Paper count */
+.paper-count { font-size: 13px; color: var(--text-light); margin-bottom: 12px; padding-left: 4px; }
+
+/* Papers grid */
+.papers-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 14px; }
+.paper-card {
+  background: var(--white); border-radius: var(--radius); padding: 18px 20px;
+  box-shadow: var(--shadow); border: 1px solid var(--border);
+  cursor: pointer; transition: all 0.2s;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.paper-card:hover { box-shadow: var(--shadow-md); border-color: #bfdbfe; transform: translateY(-1px); }
+.paper-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+.paper-year { background: #eff6ff; color: var(--primary); font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 20px; white-space: nowrap; }
+.paper-type-badge { font-size: 11px; padding: 3px 8px; border-radius: 20px; font-weight: 600; }
+.type-O { background: #dcfce7; color: #166534; }
+.type-R { background: #fef3c7; color: #92400e; }
+.type-B { background: #ede9fe; color: #5b21b6; }
+.paper-title { font-size: 14px; font-weight: 600; line-height: 1.4; color: var(--text); }
+.paper-authors { font-size: 12px; color: var(--text-light); }
+.paper-journal { font-size: 12px; color: var(--primary); font-style: italic; }
+.paper-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+.tag { font-size: 11px; padding: 2px 8px; border-radius: 20px; font-weight: 600; }
+.paper-footer { display: flex; justify-content: space-between; align-items: center; margin-top: auto; padding-top: 8px; border-top: 1px solid var(--border); }
+.paper-doi { font-size: 11px; color: var(--text-light); }
+.doi-link { color: var(--primary); text-decoration: none; font-size: 11px; font-weight: 600; }
+.doi-link:hover { text-decoration: underline; }
+
+/* Area cards */
+.areas-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+.area-card {
+  background: var(--white); border-radius: var(--radius); padding: 20px;
+  box-shadow: var(--shadow); border: 1px solid var(--border);
+  cursor: pointer; transition: all 0.2s;
+}
+.area-card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
+.area-header { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+.area-dot { width: 14px; height: 14px; border-radius: 50%; }
+.area-name { font-size: 16px; font-weight: 700; }
+.area-name-en { font-size: 12px; color: var(--text-light); }
+.area-count { font-size: 28px; font-weight: 800; margin: 4px 0; }
+.area-bar { height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+.area-bar-fill { height: 100%; border-radius: 3px; }
+.area-papers-preview { margin-top: 12px; }
+.area-paper-item { font-size: 12px; color: var(--text-light); padding: 4px 0; border-top: 1px solid var(--border); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* Authors grid */
+.authors-search { width: 100%; max-width: 400px; padding: 10px 14px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 14px; margin-bottom: 16px; }
+.authors-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+.author-card {
+  background: var(--white); border-radius: var(--radius-sm); padding: 14px 16px;
+  box-shadow: var(--shadow); border: 1px solid var(--border);
+  display: flex; align-items: center; gap: 12px;
+}
+.author-avatar { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; color: white; flex-shrink: 0; }
+.author-name { font-size: 13px; font-weight: 600; }
+.author-count { font-size: 12px; color: var(--text-light); }
+
+/* Modal */
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 200; display: flex; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(4px); }
+.modal-overlay.hidden { display: none; }
+.modal-box { background: var(--white); border-radius: var(--radius); max-width: 680px; width: 100%; max-height: 85vh; overflow-y: auto; box-shadow: var(--shadow-lg); }
+.modal-header { padding: 24px; border-bottom: 1px solid var(--border); position: sticky; top: 0; background: var(--white); }
+.modal-close { float: right; background: none; border: none; font-size: 20px; cursor: pointer; color: var(--text-light); margin-top: -4px; }
+.modal-body { padding: 24px; }
+.modal-title { font-size: 17px; font-weight: 700; line-height: 1.4; margin-bottom: 6px; }
+.modal-meta { display: flex; flex-direction: column; gap: 8px; }
+.modal-row { display: flex; gap: 8px; }
+.modal-label { font-size: 12px; font-weight: 600; color: var(--text-light); min-width: 72px; }
+.modal-value { font-size: 13px; color: var(--text); }
+.modal-doi-btn { display: inline-flex; align-items: center; gap: 6px; margin-top: 16px; padding: 10px 20px; background: var(--primary); color: white; border-radius: var(--radius-sm); text-decoration: none; font-size: 14px; font-weight: 600; }
+.modal-doi-btn:hover { background: var(--primary-dark); }
+
+/* Section title */
+.section-title { font-size: 20px; font-weight: 700; margin-bottom: 20px; color: var(--text); padding-bottom: 10px; border-bottom: 2px solid var(--border); }
+
+/* Tag styles */
+.tag-area { font-size: 10px; padding: 2px 8px; border-radius: 20px; font-weight: 700; }
+.tag-content { font-size: 10px; padding: 2px 7px; border-radius: 20px; font-weight: 500; background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; }
+
+/* Favorites button */
+.fav-btn { background: none; border: none; cursor: pointer; padding: 0 2px; color: #cbd5e1; transition: color 0.2s; line-height: 1; display: flex; align-items: center; }
+.fav-btn:hover { color: #f87171; }
+.fav-btn.saved { color: #d95252; }
+.btn { padding: 7px 13px; border: none; border-radius: var(--radius-sm); cursor: pointer; font-size: 13px; font-weight: 600; transition: all 0.15s; }
+.btn-primary { background: var(--primary); color: white; }
+.btn-primary:hover { background: var(--primary-dark); }
+.btn-fav { background: #fef3c7; color: #b45309; }
+.btn-fav.active { background: #f59e0b; color: white; }
+.btn-clear { background: #fee2e2; color: #dc2626; }
+.chart-hint { font-size: 11px; color: var(--text-light); margin-bottom: 8px; font-style: italic; }
+
+/* Dashboard split layout */
+.dash-layout { display: grid; grid-template-columns: 1fr 360px; gap: 16px; }
+.dash-charts { display: flex; flex-direction: column; gap: 16px; }
+.dash-side { background: var(--white); border-radius: var(--radius); border: 1px solid var(--border); box-shadow: var(--shadow); display: flex; flex-direction: column; position: sticky; top: 80px; height: calc(100vh - 100px); align-self: start; }
+.dash-side-header { padding: 14px 18px; border-bottom: 1px solid var(--border); font-size: 14px; font-weight: 600; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
+.dash-side-body { padding: 12px; overflow-y: auto; flex: 1; }
+.dash-side-placeholder { text-align: center; color: var(--text-light); padding: 40px 20px; font-size: 13px; }
+
+/* Tag chips */
+.tag-chips-row { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+.tag-chip { font-size: 11px; padding: 3px 10px; border-radius: 20px; cursor: pointer; border: 1px solid var(--border); background: #f8fafc; color: #475569; font-weight: 500; transition: all 0.15s; white-space: nowrap; }
+.tag-chip:hover { background: #eff6ff; border-color: var(--primary); color: var(--primary); }
+.tag-chip.active { background: var(--primary); color: white; border-color: var(--primary); }
+
+/* Tag cards grid */
+.tag-cards-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+.tag-card { padding: 6px 14px; border-radius: 20px; cursor: pointer; border: 1px solid var(--border); background: var(--white); color: var(--text); font-size: 12px; font-weight: 500; box-shadow: var(--shadow); transition: all 0.15s; display: flex; align-items: center; gap: 5px; }
+.tag-card:hover { box-shadow: var(--shadow-md); transform: translateY(-1px); }
+.tag-card.active { background: #1d4ed8; color: white; border-color: #1d4ed8; }
+.tag-card-count { font-size: 11px; opacity: 0.7; }
+
+/* Analysis sidebar */
+.analysis-layout { display: grid; grid-template-columns: 1fr 360px; gap: 16px; margin-bottom: 16px; }
+.analysis-side { background: var(--white); border-radius: var(--radius); border: 1px solid var(--border); box-shadow: var(--shadow); display: flex; flex-direction: column; }
+.analysis-side-header { padding: 12px 16px; border-bottom: 1px solid var(--border); font-size: 13px; font-weight: 600; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
+.analysis-side-body { overflow-y: auto; max-height: 500px; padding: 10px; }
+
+@media(max-width:1000px) {
+  .dash-layout { grid-template-columns: 1fr; }
+  .analysis-layout { grid-template-columns: 1fr; }
+}
+
+/* Journal table */
+.journal-table-wrap { overflow-x: auto; max-height: 500px; overflow-y: auto; }
+.journal-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.journal-table th { background: #f8fafc; font-weight: 600; color: var(--text-light); font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; padding: 9px 14px; border-bottom: 2px solid var(--border); cursor: pointer; white-space: nowrap; user-select: none; position: sticky; top: 0; }
+.journal-table th:hover { background: #eff6ff; color: var(--primary); }
+.journal-table th.sorted { color: var(--primary); }
+.journal-table td { padding: 8px 14px; border-bottom: 1px solid var(--border); }
+.journal-table tr:hover td { background: #f8fafc; }
+.if-high { display: inline-block; padding: 1px 7px; border-radius: 20px; font-size: 11px; font-weight: 700; background: #dcfce7; color: #166534; }
+.if-mid { display: inline-block; padding: 1px 7px; border-radius: 20px; font-size: 11px; font-weight: 700; background: #fef3c7; color: #92400e; }
+.if-low { display: inline-block; padding: 1px 7px; border-radius: 20px; font-size: 11px; font-weight: 700; background: #f1f5f9; color: #475569; }
+
+/* Authors split */
+.authors-section-title { font-size: 15px; font-weight: 700; margin: 0 0 12px; padding-bottom: 8px; border-bottom: 2px solid var(--border); color: var(--primary); }
+
+/* Network */
+#network-svg { width: 100%; height: 620px; background: #ffffff; border-radius: var(--radius); display: block; border: 1px solid var(--border); }
+.network-controls { display: flex; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; align-items: center; }
+.network-legend { display: flex; gap: 14px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; font-size: 12px; }
+.legend-item { display: flex; align-items: center; gap: 5px; }
+.legend-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+#net-tooltip { position: fixed; background: #1e293b; color: white; padding: 8px 12px; border-radius: 8px; font-size: 12px; max-width: 280px; pointer-events: none; z-index: 999; line-height: 1.5; display: none; }
+
+/* Add paper form */
+.add-form { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.form-group { display: flex; flex-direction: column; gap: 4px; }
+.form-group.full { grid-column: 1/-1; }
+.form-group label { font-size: 12px; font-weight: 600; color: var(--text-light); }
+.form-group input, .form-group select, .form-group textarea { padding: 8px 11px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 13px; font-family: inherit; }
+.form-group textarea { min-height: 60px; resize: vertical; }
+.form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: var(--primary); }
+
+/* Empty state */
+.empty-state { text-align: center; padding: 60px 20px; color: var(--text-light); }
+.empty-state div { font-size: 48px; margin-bottom: 12px; }
+
+/* Responsive */
+@media(max-width:900px) {
+  .stats-grid { grid-template-columns: repeat(2,1fr); }
+  .charts-grid { grid-template-columns: 1fr; }
+  .header-stats { display: none; }
+}
+@media(max-width:600px) {
+  .stats-grid { grid-template-columns: 1fr 1fr; }
+  header h1 { font-size: 17px; }
+  .papers-grid { grid-template-columns: 1fr; }
+}
+
+/* ── Password Gate ── */
+#pw-gate {
+  position: fixed; inset: 0; z-index: 9999;
+  background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 60%, #1d4ed8 100%);
+  display: flex; align-items: center; justify-content: center;
+}
+#pw-gate.hidden { display: none; }
+.pw-card {
+  background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(255,255,255,0.15);
+  backdrop-filter: blur(20px);
+  border-radius: 20px;
+  padding: 48px 52px;
+  width: 380px;
+  text-align: center;
+  box-shadow: 0 24px 64px rgba(0,0,0,0.4);
+}
+.pw-logo { font-size: 48px; margin-bottom: 16px; }
+.pw-title { font-size: 18px; font-weight: 700; color: #fff; margin-bottom: 4px; letter-spacing: -0.02em; }
+.pw-sub { font-size: 13px; color: rgba(255,255,255,0.55); margin-bottom: 32px; }
+.pw-input-wrap { position: relative; margin-bottom: 12px; }
+.pw-input-wrap input {
+  width: 100%; box-sizing: border-box;
+  padding: 12px 44px 12px 16px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.2);
+  background: rgba(255,255,255,0.1);
+  color: #fff; font-size: 16px;
+  outline: none; letter-spacing: 0.08em;
+  transition: border 0.2s;
+}
+.pw-input-wrap input::placeholder { color: rgba(255,255,255,0.35); letter-spacing: 0; }
+.pw-input-wrap input:focus { border-color: rgba(255,255,255,0.5); background: rgba(255,255,255,0.15); }
+.pw-toggle {
+  position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+  background: none; border: none; cursor: pointer; color: rgba(255,255,255,0.5);
+  font-size: 18px; padding: 0; line-height: 1;
+}
+.pw-toggle:hover { color: rgba(255,255,255,0.85); }
+.pw-btn {
+  width: 100%; padding: 13px;
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  color: #fff; font-size: 15px; font-weight: 700;
+  border: none; border-radius: 10px; cursor: pointer;
+  transition: opacity 0.2s, transform 0.15s;
+  box-shadow: 0 4px 14px rgba(59,130,246,0.4);
+}
+.pw-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+.pw-btn:active { transform: translateY(0); }
+.pw-error {
+  color: #fca5a5; font-size: 13px; margin-top: 10px;
+  min-height: 18px; transition: opacity 0.2s;
+}
+</style>
+</head>
+<body>
+
+<!-- ── Password Gate ── -->
+<div id="pw-gate">
+  <div class="pw-card">
+    <div class="pw-logo">🧬</div>
+    <div class="pw-title">高分子材料学研究室 論文データベース</div>
+    <div class="pw-sub">東京大学 大学院農学生命科学研究科</div>
+    <div class="pw-input-wrap">
+      <input type="password" id="pw-input" placeholder="パスワードを入力" autocomplete="current-password"
+        onkeydown="if(event.key==='Enter')checkPw()">
+      <button class="pw-toggle" id="pw-eye" onclick="togglePwVis()" title="表示切替">👁</button>
+    </div>
+    <button class="pw-btn" onclick="checkPw()">アクセス</button>
+    <div class="pw-error" id="pw-error"></div>
+  </div>
+</div>
+
+<script>
+(function(){
+  // セッション内で認証済みならすぐに解除
+  if (sessionStorage.getItem('polymer_auth') === '1') {
+    document.getElementById('pw-gate').classList.add('hidden');
+  }
+  // SHA-256 hash of "polymer404"
+  const HASH = '97f6615078ff65f05bbf2afe713f53e95f38082aa7a179afe1991c90b0a393b8';
+  async function sha256(str) {
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+    return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+  }
+  window.checkPw = async function() {
+    const val = document.getElementById('pw-input').value;
+    const err = document.getElementById('pw-error');
+    err.textContent = '';
+    if (!val) { err.textContent = 'パスワードを入力してください'; return; }
+    const h = await sha256(val);
+    if (h === HASH) {
+      sessionStorage.setItem('polymer_auth', '1');
+      document.getElementById('pw-gate').classList.add('hidden');
+    } else {
+      document.getElementById('pw-input').value = '';
+      err.textContent = 'パスワードが正しくありません';
+      document.getElementById('pw-input').focus();
+    }
+  };
+  window.togglePwVis = function() {
+    const inp = document.getElementById('pw-input');
+    const eye = document.getElementById('pw-eye');
+    if (inp.type === 'password') { inp.type = 'text'; eye.textContent = '🙈'; }
+    else { inp.type = 'password'; eye.textContent = '👁'; }
+  };
+})();
+</script>
+
+<header>
+  <div class="header-inner">
+    <div class="header-logo">🧬</div>
+    <div>
+      <div class="header-badge">東京大学 大学院農学生命科学研究科</div>
+      <h1>高分子材料学研究室 論文データベース</h1>
+      <p>Laboratory of Polymeric Materials, Iwata Lab — 2011–2026</p>
+    </div>
+    <div class="header-stats">
+      <div class="hstat"><div class="hstat-val" id="h-total">—</div><div class="hstat-lbl">総論文数</div></div>
+      <div class="hstat"><div class="hstat-val" id="h-orig">—</div><div class="hstat-lbl">原著論文</div></div>
+      <div class="hstat"><div class="hstat-val" id="h-journals">—</div><div class="hstat-lbl">掲載ジャーナル</div></div>
+      <div class="hstat"><div class="hstat-val">16</div><div class="hstat-lbl">年間</div></div>
+    </div>
+  </div>
+</header>
+
+<nav>
+  <div class="nav-inner">
+    <button class="tab-btn active" data-tab="dashboard">📊 ダッシュボード</button>
+    <button class="tab-btn" data-tab="papers">📚 論文一覧</button>
+    <button class="tab-btn" data-tab="areas">🔬 研究分野</button>
+    <button class="tab-btn" data-tab="analysis">📰 ジャーナル一覧</button>
+    <button class="tab-btn" data-tab="authors">👥 著者一覧</button>
+    <button class="tab-btn" data-tab="network">🕸️ 論文ネットワーク</button>
+  </div>
+</nav>
+
+<main>
+  <!-- DASHBOARD -->
+  <div id="tab-dashboard" class="tab-content active">
+    <div class="stats-grid">
+      <div class="stat-card" onclick="goToTabType('papers','')">
+        <div class="stat-icon">📄</div>
+        <div><div class="stat-val" id="s-total">—</div><div class="stat-lbl">総数</div></div>
+      </div>
+      <div class="stat-card" onclick="goToTabType('papers','O')">
+        <div class="stat-icon">🔬</div>
+        <div><div class="stat-val" id="s-orig">—</div><div class="stat-lbl">原著論文</div></div>
+      </div>
+      <div class="stat-card" onclick="goToTabType('papers','R')">
+        <div class="stat-icon">📖</div>
+        <div><div class="stat-val" id="s-reviews">—</div><div class="stat-lbl">総説・著書</div></div>
+      </div>
+      <div class="stat-card" onclick="switchTab('analysis')">
+        <div class="stat-icon">📰</div>
+        <div><div class="stat-val" id="s-journals">—</div><div class="stat-lbl">ジャーナル</div></div>
+      </div>
+      <div class="stat-card" onclick="switchTab('authors')">
+        <div class="stat-icon">👥</div>
+        <div><div class="stat-val" id="s-authors">—</div><div class="stat-lbl">著者</div></div>
+      </div>
+    </div>
+
+    <div class="dash-layout">
+      <div class="dash-charts">
+        <div class="chart-card">
+          <h3>📅 年別発表数（原著論文 / 総説・著書）</h3>
+          <div class="chart-hint">棒をクリックすると右側に当該年の論文が表示されます</div>
+          <canvas id="chart-yearly"></canvas>
+        </div>
+        <div class="chart-card">
+          <h3>🔬 研究分野別論文数</h3>
+          <div class="chart-hint">セグメントをクリックすると右側にその分野の論文が表示されます</div>
+          <canvas id="chart-areas"></canvas>
+        </div>
+      </div>
+      <div class="dash-side" id="dash-side">
+        <div class="dash-side-header">
+          <span id="dash-side-title">論文を表示</span>
+          <button style="background:none;border:none;cursor:pointer;color:var(--text-light);font-size:16px" onclick="clearDashSide()">✕</button>
+        </div>
+        <div class="dash-side-body" id="dash-side-body">
+          <div class="dash-side-placeholder">📊 チャートをクリックすると<br>論文が表示されます</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAPERS -->
+  <div id="tab-papers" class="tab-content">
+    <div class="filter-bar">
+      <input type="text" id="search" placeholder="🔍 タイトル・著者・ジャーナル・タグで検索...">
+      <select id="filter-year"><option value="">全年度</option></select>
+      <select id="filter-type">
+        <option value="">全種別</option>
+        <option value="O">原著論文</option>
+        <option value="RB">総説・著書</option>
+        <option value="R">総説・解説</option>
+        <option value="B">著書・書籍</option>
+      </select>
+      <select id="filter-area"><option value="">全分野</option></select>
+      <button class="btn btn-fav" id="btn-fav-filter" onclick="toggleFavFilter()">🔖 お気に入り</button>
+      <button class="btn btn-clear" onclick="clearFilters()">✕ クリア</button>
+      <button class="btn btn-primary" onclick="openAddModal()">＋ 論文追加</button>
+    </div>
+    <div id="tag-chips-row" class="tag-chips-row"></div>
+    <div class="paper-count" id="paper-count"></div>
+    <div class="papers-grid" id="papers-grid"></div>
+  </div>
+
+  <!-- AREAS -->
+  <div id="tab-areas" class="tab-content">
+    <!-- 年次推移チャート（研究分野タブに移設） -->
+    <div class="analysis-layout" style="margin-bottom:28px">
+      <div class="chart-card">
+        <h3>🔬 研究分野別 年次推移（原著論文）</h3>
+        <div class="chart-hint">棒をクリックすると右側に論文が表示されます</div>
+        <canvas id="chart-trend" style="max-height:300px"></canvas>
+      </div>
+      <div class="analysis-side" id="analysis-side">
+        <div class="analysis-side-header">
+          <span id="analysis-side-title">論文を表示</span>
+          <button style="background:none;border:none;cursor:pointer;color:var(--text-light)" onclick="clearAnalysisSide()">✕</button>
+        </div>
+        <div class="analysis-side-body" id="analysis-side-body">
+          <div style="text-align:center;color:var(--text-light);padding:40px 20px;font-size:13px">棒グラフをクリックすると<br>論文が表示されます</div>
+        </div>
+      </div>
+    </div>
+    <div class="section-title">🔬 研究分野別 論文一覧</div>
+    <div class="areas-grid" id="areas-grid"></div>
+    <div id="area-detail-section" style="display:none;margin-top:28px">
+      <div class="section-title" id="area-detail-title"></div>
+      <div class="papers-grid" id="area-papers-grid"></div>
+    </div>
+    <div class="section-title" style="margin-top:36px">🏷️ コンテンツタグ一覧</div>
+    <div class="tag-cards-grid" id="tag-cards-grid"></div>
+    <div id="tag-detail-section" style="display:none;margin-top:8px">
+      <div class="section-title" id="tag-detail-title"></div>
+      <div class="papers-grid" id="tag-papers-grid"></div>
+    </div>
+  </div>
+
+  <!-- JOURNAL LIST (旧: 詳細分析) -->
+  <div id="tab-analysis" class="tab-content">
+    <div class="analysis-layout">
+      <div class="chart-card" style="flex:1;min-width:0">
+        <h3>📰 掲載ジャーナル一覧</h3>
+        <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center">
+          <span style="font-size:12px;color:var(--text-light)">並べ替え：</span>
+          <button class="btn btn-primary" style="font-size:11px;padding:4px 10px" id="sort-count" onclick="sortJournals('count')">投稿数 ↓</button>
+          <button class="btn" style="font-size:11px;padding:4px 10px;background:#f1f5f9;color:#475569" id="sort-if" onclick="sortJournals('if')">IF ↓</button>
+          <button class="btn" style="font-size:11px;padding:4px 10px;background:#f1f5f9;color:#475569" id="sort-cs" onclick="sortJournals('cs')">CiteScore ↓</button>
+          <button class="btn" style="font-size:11px;padding:4px 10px;background:#f1f5f9;color:#475569" id="sort-name" onclick="sortJournals('name')">誌名 A→Z</button>
+        </div>
+        <div class="journal-table-wrap">
+          <table class="journal-table">
+            <thead><tr>
+              <th onclick="sortJournals('name')" id="jth-name">ジャーナル名 <span id="jth-name-arrow">↕</span></th>
+              <th style="text-align:center;cursor:pointer" onclick="sortJournals('count')" id="jth-count">論文数 <span id="jth-count-arrow">↓</span></th>
+              <th style="text-align:center;cursor:pointer" onclick="sortJournals('if')" id="jth-if">IF <span id="jth-if-arrow">↕</span></th>
+              <th style="text-align:center;cursor:pointer" onclick="sortJournals('cs')" id="jth-cs">CiteScore <span id="jth-cs-arrow">↕</span></th>
+            </tr></thead>
+            <tbody id="journal-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="analysis-side" id="journal-side">
+        <div class="analysis-side-header">
+          <span id="journal-side-title">論文を表示</span>
+          <button style="background:none;border:none;cursor:pointer;color:var(--text-light)" onclick="document.getElementById('journal-side-body').innerHTML='<div style=\'text-align:center;color:var(--text-light);padding:40px 20px;font-size:13px\'>ジャーナルをクリックすると<br>論文が表示されます</div>';document.getElementById('journal-side-title').textContent='論文を表示'">✕</button>
+        </div>
+        <div class="analysis-side-body" id="journal-side-body">
+          <div style="text-align:center;color:var(--text-light);padding:40px 20px;font-size:13px">ジャーナルをクリックすると<br>論文が表示されます</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- AUTHORS -->
+  <div id="tab-authors" class="tab-content">
+    <input type="text" style="width:100%;max-width:380px;padding:9px 13px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:13px;margin-bottom:20px" id="author-search" placeholder="🔍 著者名で検索..." oninput="renderAuthors(this.value)">
+    <div class="authors-grid" id="authors-grid"></div>
+  </div>
+
+  <!-- NETWORK -->
+  <div id="tab-network" class="tab-content">
+    <div class="network-controls">
+      <select id="net-year-from" style="padding:7px 11px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:13px"><option value="">開始年（全期間）</option></select>
+      <select id="net-year-to" style="padding:7px 11px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:13px"><option value="">終了年（全期間）</option></select>
+      <select id="net-area" style="padding:7px 11px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:13px"><option value="">全分野</option></select>
+      <button class="btn btn-primary" onclick="buildNetwork()">更新</button>
+      <span style="font-size:12px;color:var(--text-light)">ノード: 論文 ／ エッジ: 共著者・分野の共通性</span>
+    </div>
+    <div class="network-legend" id="net-legend"></div>
+    <svg id="network-svg"></svg>
+    <div id="net-tooltip"></div>
+  </div>
+</main>
+
+<!-- Paper detail modal -->
+<div class="modal-overlay hidden" id="modal" onclick="closeModal(event)">
+  <div class="modal-box">
+    <div class="modal-header">
+      <button class="modal-close" onclick="document.getElementById('modal').classList.add('hidden')">✕</button>
+      <div id="modal-year-badge"></div>
+      <div class="modal-title" id="modal-title"></div>
+    </div>
+    <div class="modal-body">
+      <div class="modal-meta">
+        <div class="modal-row"><span class="modal-label">著者</span><span class="modal-value" id="modal-authors"></span></div>
+        <div class="modal-row"><span class="modal-label">ジャーナル</span><span class="modal-value" id="modal-journal"></span></div>
+        <div class="modal-row"><span class="modal-label">巻/頁</span><span class="modal-value" id="modal-vol"></span></div>
+        <div class="modal-row"><span class="modal-label">年</span><span class="modal-value" id="modal-year"></span></div>
+        <div class="modal-row"><span class="modal-label">分野</span><span class="modal-value" id="modal-areas-tags"></span></div>
+        <div class="modal-row"><span class="modal-label">タグ</span><span class="modal-value" id="modal-content-tags"></span></div>
+      </div>
+      <div id="modal-doi-section"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Add paper modal -->
+<div class="modal-overlay hidden" id="add-modal" onclick="if(event.target===this)this.classList.add('hidden')">
+  <div class="modal-box">
+    <div class="modal-header">
+      <button class="modal-close" onclick="document.getElementById('add-modal').classList.add('hidden')">✕</button>
+      <div class="modal-title">＋ 新しい論文を追加</div>
+    </div>
+    <div class="modal-body">
+      <div class="add-form">
+        <div class="form-group"><label>年 *</label><input type="number" id="add-year" min="2011" max="2030" placeholder="2026"></div>
+        <div class="form-group"><label>種別 *</label><select id="add-type"><option value="O">原著論文</option><option value="R">総説・解説</option><option value="B">著書・書籍</option></select></div>
+        <div class="form-group full"><label>タイトル *</label><input type="text" id="add-title" placeholder="論文タイトル"></div>
+        <div class="form-group full"><label>著者（カンマ区切り）*</label><input type="text" id="add-authors" placeholder="Yamada K, Kimura S, Iwata T"></div>
+        <div class="form-group full"><label>ジャーナル名 *</label><input type="text" id="add-journal" placeholder="Polymer Degradation and Stability"></div>
+        <div class="form-group"><label>巻/頁</label><input type="text" id="add-vol" placeholder="123:456789"></div>
+        <div class="form-group"><label>DOI</label><input type="text" id="add-doi" placeholder="10.1016/..."></div>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:16px;justify-content:flex-end">
+        <button class="btn btn-clear" onclick="document.getElementById('add-modal').classList.add('hidden')">キャンセル</button>
+        <button class="btn btn-primary" onclick="savePaper()">保存</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Author papers modal -->
+<div class="modal-overlay hidden" id="author-modal" onclick="if(event.target===this)this.classList.add('hidden')">
+  <div class="modal-box" style="max-width:900px">
+    <div class="modal-header">
+      <button class="modal-close" onclick="document.getElementById('author-modal').classList.add('hidden')">✕</button>
+      <div class="modal-title" id="author-modal-title"></div>
+    </div>
+    <div class="modal-body">
+      <div class="papers-grid" id="author-modal-grid"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─────────────────────────────────────────────
+// PAPER DATA
+// ─────────────────────────────────────────────
+// Format: [year, type, title, authors, journal, vol, doi]
+// type: O=原著, R=総説, B=著書
+
+const RAW = [
+// 2026
+[2026,'O','Ring-Opening Graft Polymerization of Poly(p-dioxanone) from α-1,3-Glucan','Su Z, Seok JH, Kimura S, Iwata T','Polymer Degradation and Stability','246:111928','10.1016/j.polymdegradstab.2026.111928'],
+[2026,'O','Thermal Expansion Coefficient of Curdlan Tripropionate Fibers','Kabe T, Iwata T','Journal of Applied Polymer Science','143(21):e70700','10.1002/app.70700'],
+[2026,'R','The Next Frontier in Biodegradable Plastics: Enzyme-Embedding Approach','Huang Q, Kimura S, Iwata T','Biomacromolecules','','10.1021/acs.biomac.6c00092'],
+// 2025
+[2025,'O','Synthesis and degradation behavior of self-immolative polymer derived from vanillyl alcohol as a biodegradable aromatic unit','Miki Y, Fujieda K, Seok JH, Iwata T, Enomoto Y','Polymer Degradation and Stability','233:111148','10.1016/j.polymdegradstab.2024.111148'],
+[2025,'O','Exploring the Biodegradation of Polysaccharide Derivatives in Controlled Marine Conditions','Seok JH, Iwata T','Polymer Degradation and Stability','111181','10.1016/j.polymdegradstab.2025.111181'],
+[2025,'O','Low-Dissipation-Factor Polysaccharide Ester Resins without Primary Hydroxyl Groups','Fukata Y, Kimura S, Iwata T','ACS Applied Polymer Materials','7:573-577','10.1021/acsapm.4c03899'],
+[2025,'O','Oceanic Biodegradation Mechanisms of Chemosynthetic Biodegradable Polyesters','Suzuki M, Ishii S, Gonda K, Kashima H, Suzuki S, Uematsu K, Arai T, Tachibana Y, Iwata T, Kasuya K','ACS Sustainable Resource Management','2:343-353','10.1021/acssusresmgt.4c00440'],
+[2025,'O','Synthesis and characterization of aromatic polyketones and polyetherketones derived from divanillic acid','Kamishima T, Inagaki K, Nukazuka A, Iwata T, Enomoto Y','European Polymer Journal','228:113823','10.1016/j.eurpolymj.2025.113823'],
+[2025,'O','Synthesis of divanillic acid-based aromatic polyamides with linear and branched side-chains','Enomoto Y, Amanokura Y, Yagura K, Iwata T','Scientific Reports','15:5529','10.1038/s41598-025-88808-5'],
+[2025,'O','Enhancing α- and β-glucan esters material selection through machine learning','Kumagai M, Kabe T, Obuchi K, Toyama K, Iwata T, Tanaka S, Oñoro-Rubio D','Polymer Degradation and Stability','238:111293','10.1016/j.polymdegradstab.2025.111293'],
+[2025,'O','Fully circular shapable transparent paperboard with closed-loop recyclability and marine biodegradability','Isobe N, Tanaka K, Ishii S, Shimane Y, Okada S, Daicho K, Sakuma W, Uetani K, Yoshimura T, Kimoto K, Kimura S, Saito T, Nakajima R, Tsuchiya M, Ikuta T, Kawagucci S, Iwata T, Nomaki H','Science Advances','11(15):eads2426','10.1126/sciadv.ads2426'],
+[2025,'O','Differences in hierarchical structural changes between unoriented P(3HB) and P(3HB-co-3HH) under stretching','Arakawa M, Kabe T, Iwata T, Takenaka M','Journal of Applied Crystallography','58(3):886-896','10.1107/S1600576725002365'],
+[2025,'O','Biodegradation rate control with blends of poly(butylene succinate) and poly(butylene succinate-co-adipate)','Takaya D, Kabe T, Gan H, Iwata T','Polymer Degradation and Stability','240:111431','10.1016/j.polymdegradstab.2025.111431'],
+[2025,'O','Synthesis, characterization, and environmental degradability of divanillic acid derivatives and polyesters','Minegishi Y, Fujieda K, Seok JH, Iwata T, Enomoto Y','Polymer Degradation and Stability','240:111486','10.1016/j.polymdegradstab.2025.111486'],
+[2025,'O','Effect of Distribution of Substitution on Marine Biodegradability for Paramylon Acetate and Cellulose Acetate','Li R, Seok JH, Iwata T','Biomacromolecules','26(7):4238-4247','10.1021/acs.biomac.5c00252'],
+[2025,'O','Synthesis and characterization of α-1,3-glucan-graft-poly(l-lactide) copolymers exhibiting controllable seawater biodegradability','Su Z, Seok JH, Kimura S, Iwata T','Polymer Degradation and Stability','420:111490','10.1016/j.polymdegradstab.2025.111490'],
+[2025,'O','Exploring Mechanisms and Stabilization of Anhydrous State Cutinases for Polyester Biodegradation','Huang Q, Kimura S, Iwata T','Polymer Degradation and Stability','420:111517','10.1016/j.polymdegradstab.2025.111517'],
+[2025,'O','PEG-coating as a promotional tool for improving biodegradability and preserving mechanical properties of enzyme-embedded polyesters','Hirose K, Huang Q, Kimura S, Seok JH, Kumagai S, Takenaka Y, Abe H, Iwata T','Biomacromolecules','26(9):5916-5926','10.1021/acs.biomac.5c00801'],
+[2025,'O','Effect of Antimicrobial Divalent Metal Cations Onto Oxidized Surface of PHA Films on Biodegradability in Seawater','Tateiwa J, Hsu YI, Uyama H, Tsuge T, Iwata T','Macromolecular Bioscience','25(12):e00162','10.1002/mabi.202500162'],
+[2025,'O','Processing, structural analysis, and enzymatic degradation of poly(ethylene succinate) melt-spun fibers','Ishida K, Kabe T, Kumagai S, Takenaka Y, Abe H, Iwata T','ACS Applied Polymer Materials','7(18):12405-12414','10.1021/acsapm.5c02235'],
+[2025,'O','Thermal cross-linking mechanism of polyhydroxyalkanoates with vinyl unit in their side chains','Ogura S, Tateiwa J, Kabe T, Miyahara Y, Tsuge T, Iwata T','Polymer','339:129164','10.1016/j.polymer.2025.129164'],
+[2025,'O','Synthesis, characterization and fruit coating application of water-soluble methyl paramylon','Li R, Seok JH, Iwata T','ACS Sustainable Chemistry & Engineering','13(41):17094-17102','10.1021/acssuschemeng.5c03341'],
+[2025,'O','Pyrolysis-assisted catalytic hydrogenolysis of lignin in Japanese cedar: roles of polysaccharides and cell wall structure','Wang J, Ikeda-Francisco A, Minami E, Kawamoto H','Bioresource Technology','422:133676','10.1016/j.biortech.2025.133676'],
+[2025,'O','All-Aqueous Pullulan Fibers Enabling Visible-to-Near-Infrared Waveguiding with Mechanical and Thermal Resilience','Fukata Y, Jaiswal AK, Hokkanen A, Orelma H, Iwata T','Advanced Functional Materials','e24609','10.1002/adfm.202524609'],
+[2025,'O','Improvement of Thermal Processability and Recyclability of Cellulose Mixed Esters via Introducing Long Side Chains','Wang R, Iwata T','ACS Sustainable Chemistry & Engineering','14(4):2001-2009','10.1021/acssuschemeng.5c10635'],
+[2025,'O','Effect of End Capping Acylation on Thermal Properties and Marine Degradability of Acyl Terminated Oligo(L-lactide)','Seok JH, Iwata T','MRS Communications','16(2):271-278','10.1557/s43579-025-00894-8'],
+[2025,'O','Dextran-derived Thermoset Substrate Enabling Low Transmission Loss at High Frequencies','Fukata Y, Iwata T','ACS Applied Engineering Materials','4(1):350-357','10.1021/acsaenm.5c01017'],
+[2025,'O','Synthesis and characterization of bio-based linear polyurethanes derived from divanillin','Minegishi Y, Iwata T, Enomoto Y','Polymer Degradation and Stability','242:111646','10.1016/j.polymdegradstab.2025.111646'],
+// 2024
+[2024,'O','Thermal Properties and Crystallization Behavior of Curdlan Acetate Propionate Mixed Esters','Kabe T, Okumura S, Gan H, Ilangovan M, Iwata T','Macromolecules','57(3):1138-1146','10.1021/acs.macromol.3c02037'],
+[2024,'O','Microbial decomposition of biodegradable plastics on the deep-sea floor','Omura T, Isobe N, et al., Iwata T','Nature Communications','15:568','10.1038/s41467-023-44368-8'],
+[2024,'O','Synthesis, characterization and seawater biodegradability of paramylon mix ester derivatives with different DS','Li R, Seok JH, Iwata T','Polymer Degradation and Stability','223:110733','10.1016/j.polymdegradstab.2024.110733'],
+[2024,'O','Manufacturing low dielectric polysaccharide esters with high thermal stability','Fukata Y, Kimura S, Iwata T','ACS Applied Polymer Materials','6(7):4310-4320','10.1021/acsapm.4c00469'],
+[2024,'O','Processing and Evaluation of Bio-Based Paramylon Ester/Poly(butylene succinate) Blends for Industrial Applications','Ilangovan M, Kabe T, Iwata T','Journal of Polymers and the Environment','','10.1007/s10924-024-03274-w'],
+[2024,'O','Coastal and deep-sea biodegradation of polyhydroxyalkanoate microbeads','Hyodo N, Gan H, Ilangovan M, Kimura S, Kasuya K, Isobe N, Iwata T','Scientific Reports','14:10302','10.1038/s41598-024-60949-z'],
+[2024,'O','Improvement of Marine Biodegradability and Mechanical Properties of Poly(D-lactide) Films by PEGylated Enzymes','Huang Q, Kimura S, Iwata T','ACS Sustainable Chemistry & Engineering','12(31):11674-11682','10.1021/acssuschemeng.4c03236'],
+[2024,'O','Effects of Molecular Weight on the Marine Biodegradability of Poly(L-lactic acid)','Seok JH, Iwata T','Biomacromolecules','25(7):4420-4427','10.1021/acs.biomac.4c00454'],
+[2024,'O','TEM Observation of Oriented Crystals in Curdlan Tripropionate Fibers and Comparison with Lamellar Crystals in Microbial Polyester Fibers','Kimura N, Kabe T, Kimura S, Iwata T','Fiber Science and Technology','80(8):178-183','10.2115/fiberst.2024-0020'],
+[2024,'O','Low-dielectric thermosetting resins derived from polysaccharide unsaturated esters','Fukata Y, Kimura S, Iwata T','Polymer Degradation and Stability','230:111011','10.1016/j.polymdegradstab.2024.111011'],
+[2024,'O','One- and two-step synthesis of paramylon mixed ester derivatives and substitution effect on mechanical properties and seawater biodegradability','Li R, Seok JH, Iwata T','Polymer Degradation and Stability','230:111037','10.1016/j.polymdegradstab.2024.111037'],
+[2024,'O','Evaluation of the Highly Ordered Structure and Enzymatic Degradation of P[(R)-3HB-co-4HB] Elastic Porous Fibers','Tsujimoto S, Omura T, Komiyama K, Kabe T, et al., Iwata T','Biomacromolecules','25(12):7861-7868','10.1021/acs.biomac.4c01144'],
+[2024,'O','Plastics Biodegradation Triggering by Surface Chemical Modification and Introduction of Antimicrobial Quaternary Ammonium Cations','Tateiwa J, Hsu YI, Uyama H, Iwata T','ACS Applied Polymer Materials','','10.1021/acsapm.4c03642'],
+// 2023
+[2023,'O','Cleavage of α-1,4-Glycosidic Linkages by GPI-Anchored α-Amylase AgtA from Aspergillus oryzae','Koizumi A, Miyazawa K, Ogata M, Takahashi Y, Yano S, Yoshimi A, Sano M, Hidaka M, Nihira T, Nakai H','Frontiers in Fungal Biology','3','10.3389/ffunb.2022.1061841'],
+[2023,'O','Synthesis and enzymatic biodegradation of co-polyesters consisting of divanillic acid and aliphatic diols','Fujieda K, Enomoto Y, Huang Q, Iwata T','Polymer','268:125685','10.1016/j.polymer.2023.125685'],
+[2023,'O','Bio-based polymer blend with tunable properties developed from paramylon hexanoate and aliphatic polyester','Ilangovan M, Gan H, Kabe T, Iwata T','Polymer','270:125791','10.1016/j.polymer.2023.125791'],
+[2023,'O','Bio-based vitrimers from divanillic acid and epoxidized soybean oil','Zhang Y, Enomoto Y, Iwata T','RSC Sustainability','','10.1039/D2SU00140C'],
+[2023,'O','In Situ Raman Analysis of Biofilm Exopolysaccharides Formed in Streptococcus mutans','Pezzotti G, Ofuji S, Imamura H, et al.','International Journal of Molecular Sciences','24(7):6694','10.3390/ijms24076694'],
+[2023,'O','Static and in situ small-angle X-ray scattering analyses of the effect of molecular structure of curdlan hydrogels','Matsumoto Y, Enomoto Y, Kabe T, Iwata T','Polymer','272:125843','10.1016/j.polymer.2023.125843'],
+[2023,'O','Surface oxidation of polyhydroxyalkanoate films with different molecular structure to trigger biodegradation','Tateiwa J, Hsu YI, Uyama H, Kasuya K, Iwata T','Polymer Degradation and Stability','214:110391','10.1016/j.polymdegradstab.2023.110391'],
+[2023,'O','Melt-Spun Fibers Manufactured from α-1,3-Glucan Short- and Long-Chain Mixed Esters','Uenoyama Y, Kimura S, Gan H, Iwata T','Journal of Fiber Science and Technology','79(4):82-91','10.2115/fiberst.2023-0008'],
+[2023,'O','One-pot synthesis of cellulose ester-graft-polylactide copolymers in an ionic liquid medium','Lee HY, Seok JH, Lee JC, Lee WK, Iwata T','Polymer Degradation and Stability','214:110401','10.1016/j.polymdegradstab.2023.110401'],
+[2023,'O','Enhancement of Regenerated Curdlan Fibers with High Wet-Ductility via Post-Drawing in Water','Suzuki S, Togo A, Kimura S, Iwata T','Journal of Fiber Science and Technology','79(6):143-149','10.2115/fiberst.2023-0015'],
+[2023,'O','Real-Time Structural Changes of P[(R)-3HB-co-4HB] Biodegradable Elastic Fibers during Tensile Tests','Omura T, Komiyama K, Maehara A, Kabe T, Iwata T','ACS Symposium Series','1450:217-236','10.1021/bk-2023-1450.ch013'],
+[2023,'O','Investigating the Structure-Property Relationships of Paramylon Ester/PBAT Blends for Sustainable Packaging','Ilangovan M, Kabe T, Iwata T','ACS Applied Polymer Materials','5(11):9255-9262','10.1021/acsapm.3c01759'],
+[2023,'O','Thermal Embedding of Humicola insolens Cutinase: A Strategy for Improving Polyester Biodegradation in Seawater','Huang Q, Kimura S, Iwata T','Biomacromolecules','24(12):5836-5846','10.1021/acs.biomac.3c00835'],
+[2023,'O','Enzymatic degradation mechanism of the lamellar stacking structures of PHBV fibers','Kimura N, Kabe T, Kimura S, Kasuya K, Iwata T','Polymer Degradation and Stability','219:110607','10.1016/j.polymdegradstab.2023.110607'],
+[2023,'O','Marine biodegradation of P[(R)-3HB-co-4HB] elastic fibers in seawater at different temperatures','Omura T, Tsujimoto S, Kimura S, Maehara A, Kabe T, Iwata T','Frontiers in Bioengineering and Biotechnology','1303830','10.3389/fbioe.2023.1303830'],
+// 2022
+[2022,'O','Synthesis of paramylon ester-graft-PLA copolymers and its two-step enzymatic degradation','Seok JH, Enomoto Y, Iwata T','Polymer Degradation and Stability','197:109855','10.1016/j.polymdegradstab.2022.109855'],
+[2022,'O','Curdlan acetate fibres with low degrees of substitution fabricated via continuous chemical modification','Suzuki S, Togo A, Kimura S, Iwata T','Green Chemistry','24:2567','10.1039/D1GC04336F'],
+[2022,'O','Mechanical properties and highly-ordered structural analysis of elastic poly(3-hydroxybutyrate-co-3-hydroxyvalerate) fibers','Komiyama K, Omura T, Kabe T, Iwata T','Polymer','247:124772','10.1016/j.polymer.2022.124772'],
+[2022,'O','Multilayer biodegradable films with degradation initiation function triggered by weakly alkaline seawater','Tateiwa J, Kimura S, Kasuya K, Iwata T','Polymer Degradation and Stability','200:109942','10.1016/j.polymdegradstab.2022.109942'],
+[2022,'O','Preparation and Crystal Structure Analysis of High-Strength Film Derived from Nigeran Ester Derivatives','Togo A, Uechi K, Mizutani O, Kimura S, Iwata T','Journal of Fiber Science and Technology','78(8):126-132','10.2115/fiberst.2022-0017'],
+[2022,'O','Synthesis and characterization of α-1,6-graft-α-1,3-glucan ester derivatives','Togo A, Usagawa M, Kimura S, Iwata T','Polymer','253:125004','10.1016/j.polymer.2022.125004'],
+[2022,'O','Synthesis of fully divanillic acid-based aromatic polyamides and their thermal and mechanical properties','Yagura K, Enomoto Y, Iwata T','Polymer','256:152222','10.1016/j.polymer.2022.152222'],
+[2022,'O','Synthesis and characterization of novel potentially biodegradable aromatic polyesters consisting of divanillic acids','Fujieda K, Enomoto Y, Zhang Y, Iwata T','Polymer','257:125241','10.1016/j.polymer.2022.125241'],
+[2022,'O','Preparation and properties of binary green blends from PBSA and β-1,3-D-glucan ester derivative','Ilangovan M, Gan H, Kabe T, Iwata T','Polymer','259:125332','10.1016/j.polymer.2022.125332'],
+[2022,'O','Manufacture, physical properties, and degradation of biodegradable polyester microbeads','Gan H, Okada T, Kimura S, Kasuya K, Iwata T','Polymer Degradation and Stability','208:110239','10.1016/j.polymdegradstab.2022.110239'],
+// 2021
+[2021,'O','Thermal degradation and isothermal crystallization behavior of curdlan propionate and its melt-spinning fiber','Kabe T, Gan H, Wakamoto K, Iwata T','Polymer','215:123418','10.1016/j.polymer.2021.123418'],
+[2021,'O','Synthesis and characterization of α-1,3-alt-α-1,4-glucan (nigeran) ester derivatives','Togo A, Uechi K, Mizutani O, Kimura S, Iwata T','Polymer','214:123343','10.1016/j.polymer.2020.123343'],
+[2021,'O','Compatibility and hydrolytic behaviors of polylactide isomer/PBS mixtures by the Langmuir technique','Im D, Gavande V, Lee H, Iwata T, Lee WK','Polymer Degradation and Stability','186:109517','10.1016/j.polymdegradstab.2021.109517'],
+[2021,'O','Air-Jet Wet-Spinning of Curdlan Using Ionic Liquid','Suzuki S, Togo A, Gan H, Kimura S, Iwata T','ACS Sustainable Chemistry & Engineering','9(11):4247-4255','10.1021/acssuschemeng.1c00488'],
+[2021,'O','Mechanism of Elastic Properties of P[(R)-3HB-co-4HB] Films Revealed by Synchrotron Radiation','Kawamura Y, Gan H, Kabe T, Maehara A, Kimura S, Hikima T, Takata M, Iwata T','ACS Omega','6(11):7387-7393','10.1021/acsomega.0c05662'],
+[2021,'O','Wet Spinning and Structure Analysis of α-1,3-Glucan Regenerated Fibers','Togo A, Suzuki S, Kimura S, Iwata T','ACS Applied Polymer Materials','3(4):2063-2069','10.1021/acsapm.1c00114'],
+[2021,'O','Synthesis and characterization of bio-based aromatic polyketones and polyetherketones derived from divanillic acid','Enomoto Y, Iwata T','European Polymer Journal','154:110526','10.1016/j.eurpolymj.2021.110526'],
+[2021,'O','Electrospun Nanofiber Mat of α-1,3-Glucan Butenoate and Its Surface Modification via Thiol-Ene Reaction','Hori Y, Enomoto Y, Kimura S, Iwata T','Journal of Fiber Science and Technology','77(5):157-165','10.2115/fiberst.2021-0015'],
+[2021,'O','Synthesis of highly thermally stable divanillic acid-derived polyamides and their mechanical properties','Yagura K, Zhang Y, Enomoto Y, Iwata T','Polymer','228:123907','10.1016/j.polymer.2021.123907'],
+[2021,'O','Synthesis and characterization of paramylon propionate-graft-poly(lactic acid) and -poly(ε-caprolactone)','Seok JH, Enomoto Y, Iwata T','Polymer','228:123922','10.1016/j.polymer.2021.123922'],
+[2021,'O','Development of self-degradable aliphatic polyesters by embedding lipases via melt extrusion','Huang Q, Kimura S, Iwata T','Polymer Degradation and Stability','190:109647','10.1016/j.polymdegradstab.2021.109647'],
+[2021,'O','Highly stretchable curdlan hydrogels and mechanically strong stretched-dried-gel-films obtained by strain-induced crystallization','Matsumoto Y, Enomoto Y, Kimura S, Iwata T','Carbohydrate Polymers','118312','10.1016/j.carbpol.2021.118312'],
+[2021,'O','High tensile strength regenerated α-1,3-glucan fiber and crystal transition','Togo A, Suzuki S, Kimura S, Iwata T','ACS Omega','6(31):20361-20368','10.1021/acsomega.1c02365'],
+[2021,'O','Synthesis of homo- and copolyesters containing divanillic acid, 1,4-cyclohexanedimethanol, and alkanediols','Zhang Y, Enomoto Y, Iwata T','Polymer Degradation and Stability','192:109706','10.1016/j.polymdegradstab.2021.109706'],
+[2021,'O','Selective substitution of long-acyl groups into alcohols of kraft lignin over transesterification using ionic liquid','Suzuki S, Iwata T','Journal of Wood Science','67:53','10.1186/s10086-021-01985-5'],
+[2021,'O','Wet Spinning of α-1,3-glucan using an Ionic Liquid','Togo A, Suzuki S, Kimura S, Iwata T','Journal of Fiber Science and Technology','77(8):213-222','10.2115/fiberst.2021-0023'],
+[2021,'O','Enzymatic control and evaluation of degrees of polymerization of β-(1→2)-glucans','Nakajima M, Tanaka N, Kobayashi K, Nakai H, Kimura S, Iwata T, Taguchi H','Analytical Biochemistry','632:114366','10.1016/j.ab.2021.114366'],
+[2021,'O','Effect of morphology and molecular orientation on biodegradability of poly[(R)-3HB-co-(R)-3HV]','Komiyama K, Omura T, Iwata T','Polymer Degradation and Stability','193:109719','10.1016/J.POLYMDEGRADSTAB.2021.109719'],
+[2021,'O','Manufacture of strong melt-spun fibers derived from α-1,3-glucan esters and determination of their crystal structures','Fukata Y, Kimura S, Kabe T, Gan H, Iwata T','Polymer','234:124225','10.1016/j.polymer.2021.124225'],
+[2021,'O','In vitro enzymatic polymerization of α-1,6-graft-α-1,3-glucan and structural analysis of gel formation','Togo A, Usagawa M, Kimura S, Iwata T','Biomacromolecules','22(11):4701-4708','10.1021/acs.biomac.1c00982'],
+[2021,'O','Elastic Marine Biodegradable Fibers Produced from Poly[(R)-3HB-co-4HB] and Evaluation of Their Biodegradability','Omura T, Komiyama K, Maehara A, Kabe T, Iwata T','ACS Applied Polymer Materials','3:6479-6487','10.1021/acsapm.1c01212'],
+// 2020
+[2020,'O','Synthesis of biphenyl polyesters derived from divanillic acid, and their thermal and mechanical properties','Enomoto Y, Iwata T','Polymer','193:122330','10.1016/j.polymer.2020.122330'],
+[2020,'O','Synthesis of α-1,3-Glucan branched ester derivatives with excellent thermal stability and thermoplasticity','Fukata Y, Kimura S, Iwata T','Polymer Degradation and Stability','177:109130','10.1016/j.polymdegradstab.2020.109130'],
+[2020,'O','Manufacture, Characterization, and Structure Analysis of Melt-Spun Fibers Derived from Paramylon Esters','Gan H, Kabe T, Iwata T','Journal of Fiber Science and Technology','76(5):151-160','10.2115/fiberst.2020-0018'],
+[2020,'O','Synthesis and characterization of biphenyl polyesters derived from divanillic acid and cyclic diols','Zhang Y, Enomoto Y, Iwata T','Polymer','203:122751','10.1016/j.polymer.2020.122751'],
+[2020,'O','Enzymatic Self-Biodegradation of Poly(l-lactic acid) Films by Embedded Heat-Treated and Immobilized Proteinase K','Huang Q, Hiyama M, Kabe T, Kimura S, Iwata T','Biomacromolecules','21(8):3301-3307','10.1021/acs.biomac.0c00759'],
+[2020,'O','Primary structure of gum arabic and its dynamics at oil/water interface','Isobe N, Sagawa N, Ono Y, Fujisawa S, Kimura S, Kinoshita K, Miuchi T, Iwata T, Isogai A, Nishino M, Deguchi S','Carbohydrate Polymers','249:116843','10.1016/j.carbpol.2020.116843'],
+[2020,'O','Highly deformable and recoverable cross-linked hydrogels of 1,3-α-D and 1,3-β-D-glucans','Matsumoto Y, Enomoto Y, Kimura S, Iwata T','Carbohydrate Polymers','251:116794','10.1016/j.carbpol.2020.116794'],
+[2020,'O','Comparative Studies on Regioselectivity of α- and β-Linked Glucan Tosylation','Koschella A, Heinze T, Tied A, Geitel K, Chien CY, Iwata T','Molecules','25:5382','10.3390/molecules25225382'],
+[2020,'O','Synthesis of α-1,3- and β-1,3-glucan esters with carbon–carbon double bonds and their surface modification','Hori Y, Enomoto Y, Kimura S, Iwata T','Polymer International','','10.1002/pi.6157'],
+[2020,'O','Thermal degradation behavior of poly[(R)-3-hydroxybutyrate-co-4-hydroxybutyrate]','Omura T, Goto T, Maehara A, Kimura S, Abe H, Iwata T','Polymer Degradation and Stability','183:109460','10.1016/j.polymdegradstab.2020.109460'],
+[2020,'O','Synthesis and Properties of α-1,3-Glucan with Branched and Linear Mixed Ester Side Chains','Fukata Y, Kimura S, Iwata T','ACS Applied Polymer Materials','3(1):418-425','10.1021/acsapm.0c01180'],
+// 2019
+[2019,'O','Synthesis of polyamides from sugar derived D-glucaric acid and xylylenediamines','Wu Y, Enomoto Y, Masaki H, Iwata T','Journal of Applied Polymer Science','36(15):47255','10.1002/app.47255'],
+[2019,'O','Synthesis and Characterization of Biobased Polyesters Containing Anthraquinones Derived from Gallic Acid','Goto T, Iwata T, Abe H','Biomacromolecules','20(1):318-325','10.1021/acs.biomac.8b01361'],
+[2019,'O','Lipase-Catalyzed Regioselective Synthesis of Dextrin Esters','Lee HY, Kimura S, Iwata T','Biomacromolecules','20(2):705-711','10.1021/acs.biomac.8b01374'],
+[2019,'O','Synthesis and properties of curdlan branched and linear mixed ester derivatives','Zhai W, Iwata T','Polymer Degradation and Stability','161:50-56','10.1016/j.polymdegradstab.2019.01.008'],
+[2019,'O','Crystal structures and crystalline elastic modulus of paramylon esters','Gan H, Kabe T, Kimura S, Hikima T, Takata M, Iwata T','Polymer','172:7-12','10.1016/j.polymer.2019.03.002'],
+[2019,'O','Recyclable fully biobased chitosan adsorbents spray-dried in one pot to microscopic size and enhanced adsorption capacity','Feng Z, Danjo T, Odelius K, Hakkarainen M, Iwata T, Albertsson AC','Biomacromolecules','20(5):1956-1964','10.1021/acs.biomac.9b00186'],
+[2019,'O','Synthesis of C2-Regioselectively Substituted Curdlan Acetate Propionate and the Effect of C2 Substituent on Properties','Chien CY, Enomoto Y, Iwata T','ACS Sustainable Chemistry & Engineering','7(11):9857-9864','10.1021/acssuschemeng.9b00415'],
+[2019,'O','Rearrangement of inhomogeneous distribution of ionic multiplets in ethylene ionomer induced by artificial weathering','Nagayama K, Chan CD, Walls DJ, Londono JD, Iwata T','Polymer Degradation and Stability','167:139-145','10.1016/j.polymdegradstab.2019.07.002'],
+[2019,'O','Large-scale preparation of β-1,2-glucan using quite a small amount of sophorose','Kobayashi K, Nakajima M, Aramasa H, Kimura S, Iwata T, Nakai H, Taguchi H','Bioscience, Biotechnology, and Biochemistry','83:1867-1874','10.1080/09168451.2019.1630257'],
+[2019,'O','Synthesis, Characterization and Fiber Spinning of Poly(caffeic acid)','Ishii D, Iwata T','Journal of Fiber Science and Technology','75(11):181-185','10.2115/fiberst.2019-0021'],
+[2019,'O','Synthesis and characterization of dextran ester derivatives and adhesive properties','Togo A, Enomoto Y, Takemura A, Iwata T','Journal of Wood Science','65:66','10.1186/s10086-019-1845-x'],
+[2019,'O','All Sugar Based Cellulose Derivatives Synthesized by Azide-Alkyne Click Chemistry','Koschella A, Chien CY, Iwata T, Thonhofer MS, Wrodnigg TM, Heinze T','Macromolecular Chemistry and Physics','221:1900343','10.1002/macp.201900343'],
+[2019,'O','Synthesis and characterization of dextran ester derivatives and their adhesive properties (Japanese)','Togo A, Enomoto Y, Takemura A, Iwata T','Journal of the Adhesion Society of Japan','55(9):315-322','10.11618/adhesion.55.315'],
+// 2018
+[2018,'O','Synthesis of cellulose branched ester derivatives and their properties','Danjo T, Iwata T','Polymer','137:358-365','10.1016/j.polymer.2018.01.009'],
+[2018,'O','Synthesis and characterization of regioselectively substituted curdlan hetero esters','Chien CY, Iwata T','Carbohydrate Polymers','181:300-306','10.1016/j.carbpol.2017.10.046'],
+[2018,'O','Synthesis and characteristic of dextrin derivatives by heterogeneous esterification','Lee HY, Danjo T, Iwata T','Journal of Polymer Research','25:183','10.1007/s10965-017-1333-1'],
+[2018,'O','Synthesis and Physical Properties of Curdlan Branched Esters','Zhai W, Danjo T, Iwata T','Journal of Polymer Research','25:181','10.1007/s10965-017-1348-7'],
+[2018,'O','Effect of Molecular Weight on Physical and Crystallization Properties of UHMW-P(3HB) Fibers','Kabe T, Sugiura T, Hikima T, Takata M, Iwata T','Journal of Fiber Science and Technology','74(1):30-39','10.2115/fiberst.2018-0005'],
+[2018,'O','Optimization of polyol production via liquefaction from Acacia mangium','Palle I, Hori N, Iwata T, Takemura A','Holzforschung','72:6','10.1515/hf-2017-0076'],
+[2018,'O','Molecular Mass and Localization of α-1,3-Glucan in Cell Wall of Aspergillus nidulans','Miyazawa K, Yoshimi A, Kasahara S, et al.','Frontiers in Microbiology','9:2623','10.3389/fmicb.2018.02623'],
+[2018,'O','Effects of Monomer Compositions and Molecular Weight on Physical Properties of Alginic Acid Esters','Matsumoto Y, Ishii D, Iwata T','ACS Symposium Series','1310:125-136','10.1021/bk-2018-1310.ch009'],
+// 2017
+[2017,'O','Synthesis and characterization of regioselectively substituted curdlan hetero esters via acyl migration','Chien CY, Enomoto-Rogers Y, Takemura A, Iwata T','Carbohydrate Polymers','155:440-447','10.1016/j.carbpol.2016.08.067'],
+[2017,'O','Long/Short Chain Mixed Cellulose Esters: Effects of Long Acyl Chain Structures on Mechanical and Thermal Properties','Tanaka S, Iwata T, Iji M','ACS Sustainable Chemistry & Engineering','5(2):1485-1493','10.1021/acssuschemeng.6b02066'],
+[2017,'O','PVA Nanocomposites Reinforced with Cellulose Nanofibers from Oil Palm Empty Fruit Bunches','Fahma F, Hori N, Iwata T, Takemura A','Emirates Journal of Food and Agriculture','29(5):323-329','10.9755/ejfa.2016-02-215'],
+[2017,'O','Zero Birefringence Films of Pullulan Ester Derivatives','Danjo T, Enomoto Y, Shimada H, Nobukawa S, Yamaguchi M, Iwata T','Scientific Reports','7:46342','10.1038/srep46342'],
+[2017,'O','Chemical Surface Modification of Aluminum Oxide Nanoparticles with Graft Copolymer','Motokawa T, Makino M, Yamamoto K, Takase H, Nagano S, Enomoto-Rogers Y, Iwata T, Kawaguchi T, Sakaguchi M','Advanced Powder Technology','28:266-279','10.1016/j.apt.2016.09.031'],
+[2017,'O','Thermal and Mechanical Properties of Tailor-Made Unbranched α-1,3-glucan Esters with Various Carboxylic Acid Chain Lengths','Puanglek S, Kimura S, Iwata T','Carbohydrate Polymers','169:245-254','10.1016/j.carbpol.2017.04.015'],
+[2017,'O','Synthesis and Characterization of Alginic Acid Ester Derivatives','Matsumoto Y, Ishii D, Iwata T','Carbohydrate Polymers','171:229-235','10.1016/j.carbpol.2017.05.001'],
+[2017,'O','Synthesis, Properties and Molecular Conformation of Paramylon Ester Derivatives','Gan H, Enomoto Y, Kabe T, Ishii D, Hikima T, Takata M, Iwata T','Polymer Degradation and Stability','145:142-149','10.1016/j.polymdegradstab.2017.05.011'],
+[2017,'O','Synthesis and characterization of poly[(ferulic acid)-alt-(glycine)]','Goto T, Ishii D, Enomoto-Rogers Y, Takemura A, Iwata T','Polymer','112:385-392','10.1016/j.polymer.2017.02.007'],
+// 2016
+[2016,'O','Enhanced crystallization of poly(lactide) stereocomplex by xylan propionate','Ishii D, Kimishima M, Otake K, Iwata T','Polymer International','65(3):339-345','10.1002/pi.5061'],
+[2016,'O','Synthesis and enzymatic degradation of randomly substituted 2,3,6-O-cellulose acetate and regioselectively substituted 2,3-O-cellulose acetate','Takeda N, Enomoto-Rogers Y, Takemura A, Iwata T','Polymer Degradation and Stability','129:125-132','10.1016/j.polymdegradstab.2016.04.008'],
+[2016,'O','Investigating thermal properties and melting-induced structural changes in cold-drawn P(3HB) films','Kabe T, Tanaka T, Marubayashi H, Hikima T, Takata M, Iwata T','Polymer','93:181-188','10.1016/j.polymer.2016.04.028'],
+[2016,'O','Conformation analysis of D-glucaric acid in deuterium oxide by NMR spectroscopy','Enomoto-Rogers Y, Masaki H, Ito T, Furihata K, Iwata T','Magnetic Resonance in Chemistry','54(7):561-567','10.1002/mrc.4396'],
+[2016,'O','Cellulose nanowhiskers from sugar palm fibers','Fahma F, Hori N, Iwamoto S, Iwata T, Takemura A','Emirates Journal of Food and Agriculture','28(8):566-571','10.9755/ejfa.2016-02-188'],
+[2016,'O','Crystal Polymorphism of Curdlan Propionate: 6-Fold versus 5-Fold Helices','Marubayashi H, Yukinaka K, Enomoto-Rogers Y, Hikima T, Takata M, Iwata T','ACS Macro Letters','5(5):607-611','10.1021/acsmacrolett.6b00186'],
+[2016,'O','X-ray Crystal Structure of Anhydrous Chitosan at Atomic Resolution','Naito PK, Ogawa Y, Sawada D, Nishiyama Y, Iwata T, Wada M','Biopolymers','105(7):361-368','10.1002/bip.22818'],
+[2016,'O','Synthesis of Crystalline and Amphiphilic Polymers from D-Glucaric Acid','Wu Y, Enomoto-Rogers Y, Masaki H, Iwata T','ACS Sustainable Chemistry & Engineering','4(7):3812-3819','10.1021/acssuschemeng.6b00530'],
+[2016,'O','Solvent effects on heterogeneous synthesis of cardanol-bonded cellulose thermoplastics','Tanaka S, Iwata T, Iji M','Polymer','99(2):307-314','10.1016/j.polymer.2016.07.024'],
+[2016,'O','In vitro synthesis of linear α-1,3-glucan and chemical modification to ester derivatives exhibiting outstanding thermal properties','Puanglek S, Kimura S, Enomoto-Rogers Y, Kabe T, Yoshida M, Wada M, Iwata T','Scientific Reports','6:30479','10.1038/srep30479'],
+[2016,'O','Soft, tough, and flexible curdlan hydrogels and organogels fabricated by covalent cross-linking','Enomoto-Rogers Y, Kimura S, Iwata T','Polymer','100:143-148','10.1016/j.polymer.2016.08.032'],
+[2016,'O','Co-crystallization phenomena in biosynthesized isotactic poly[(R)-lactate-co-(R)-2-hydroxybutyrate]s','Kabe T, Matsumoto K, Terai S, Hikima T, Takata M, Miyake M, Taguchi S, Iwata T','Polymer Degradation and Stability','132:137-144','10.1016/j.polymdegradstab.2016.03.005'],
+[2016,'O','Uniformity of Monomer Composition and Material Properties of Medium-Chain-Length Polyhydroxyalkanoates','Hiroe A, Ishii N, Ishii D, Kabe T, Abe H, Iwata T, Tsuge T','ACS Sustainable Chemistry & Engineering','4(12):6905-6911','10.1021/acssuschemeng.6b01851'],
+// 2015
+[2015,'O','Synthesis and Characterization of Pullulan Alkyl Esters','Enomoto-Rogers Y, Iio N, Takemura A, Iwata T','European Polymer Journal','66:470-477','10.1016/j.eurpolymj.2015.03.007'],
+[2015,'O','High tensile strength fiber of poly[(R)-3-hydroxybutyrate-co-(R)-3-hydroxyhexanoate]','Kabe T, Hongo C, Tanaka T, Hikima T, Takata M, Iwata T','Journal of Applied Polymer Science','132:41258','10.1002/app.41258'],
+[2015,'O','In-situ Analysis of Chemical Structure of API Adhesive Using FT-NIR Spectroscopy','Ling Z, Hori N, Iwata T, Takemura A','Journal of the Adhesion Society of Japan','51(S1):322-331','10.11618/adhesion.51.322'],
+[2015,'O','Effect of acetylation site on orientation birefringence of cellulose triacetate','Nobukawa S, Enomoto-Rogers Y, Shimada H, Iwata T, Yamaguchi M','Cellulose','22(5):3003-3012','10.1007/s10570-015-0730-z'],
+[2015,'O','Novel method of surface modification of microcrystalline cellulose powder with poly(isobutyl vinyl ether)','Motokawa T, Makino M, Enomoto-Rogers Y, Kawaguchi T, Ohura T, Iwata T, Sakaguchi M','Advanced Powder Technology','26:1383-1390','10.1016/j.apt.2015.07.012'],
+[2015,'O','Crystal transition from hydrated chitosan and chitosan/monocarboxylic acid complex to anhydrous chitosan','Naito P, Ogawa Y, Kimura S, Iwata T, Wada M','Journal of Polymer Science Part B','53:1065-1069','10.1002/polb.23748'],
+// 2014
+[2014,'O','Syntheses of glucomannan esters and their thermal and mechanical properties','Enomoto-Rogers Y, Ohmomo Y, Takemura A, Iwata T','Carbohydrate Polymers','101:592-599','10.1016/j.carbpol.2013.09.103'],
+[2014,'O','Comparison of Mechanical Reinforcement Effects of Cellulose Nanofibrils and Carbon Nanotubes in PLLA Composites','Fujisawa S, Saito T, Kimura S, Iwata T, Isogai A','Composites Science and Technology','90:96-101','10.1016/j.compscitech.2013.10.021'],
+[2014,'O','Transition of Spherulite Morphology in a Crystalline/Crystalline Binary Blend of Biodegradable Microbial Polyesters','Kabe T, Sato T, Kasuya K, Hikima T, Takata M, Iwata T','Polymer','55:271-277','10.1016/j.polymer.2013.11.038'],
+[2014,'O','Preparation and characterization of polychloroprene nanocomposite with cellulose nanofibers from oil palm','Fahma F, Hori N, Iwata T, Takemura A','Journal of Applied Polymer Science','131:40159',''],
+[2014,'O','Curdlan Ester Derivatives: Synthesis, Structure, and Properties','Marubayashi H, Yukinaka K, Enomoto-Rogers Y, Takemura A, Iwata T','Carbohydrate Polymers','103:427-433','10.1016/j.carbpol.2013.12.015'],
+[2014,'O','Gellan sulfate inhibits Plasmodium falciparum growth and invasion of red blood cells in vitro','Recuenco FC, Kobayashi K, Ishiwa A, Enomoto-Rogers Y, Fundador NGV, et al.','Scientific Reports','4:4723','10.1038/srep04723'],
+[2014,'O','Syntheses and properties of glucomannan acetate butyrate mixed esters','Danjo T, Enomoto-Rogers Y, Takemura A, Iwata T','Polymer Degradation and Stability','109:373-378','10.1016/j.polymdegradstab.2014.05.023'],
+[2014,'O','Correlation between ionic degree of covalent bond and ionic yield due to mechanical fracture','Sakaguchi M, Makino M, Ohura T, Iwata T','Polymer','55:1917-1919','10.1016/j.polymer.2014.02.056'],
+[2014,'O','Contact electrification of polymers due to electron transfer among mechano anions, cations and radicals','Sakaguchi M, Makino M, Ohura T, Iwata T','Journal of Electrostatics','72:412-416','10.1016/j.elstat.2014.06.006'],
+[2014,'O','Crystallization behaviors of P[(R)-3HB-co-4HB]/PEG-grafted TEMPO-oxidized cellulose nanofiber blends','Zhang J, Fujizawa H, Isogai A, Hikima T, Takata M, Iwata T','Polymer Degradation and Stability','110:529-536','10.1016/j.polymdegradstab.2014.09.022'],
+[2014,'O','Correlation between properties of microbial polyesters and molecular/higher-order structures (Japanese)','Kabe T, Iwata T','Kobunshi Ronbunshu','71:527-539','10.1295/koron.71.527'],
+// 2013
+[2013,'O','Syntheses and characterization of konjac glucomannan acetate and their thermal and mechanical properties','Enomoto-Rogers Y, Ohmomo Y, Iwata T','Carbohydrate Polymers','92:1827-1834','10.1016/j.carbpol.2012.11.043'],
+[2013,'O','Morphology and properties of poly(methyl methacrylate)-cellulose nanocomposites prepared by immersion precipitation','Fahma F, Hori N, Iwata T, Takemura A','Journal of Applied Polymer Science','128:1563-1568','10.1002/app.38312'],
+[2013,'O','Xylan esters as bio-based nucleating agents for poly(L-lactic acid)','Fundador NG, Rogers Y, Takemura A, Iwata T','Polymer Degradation and Stability','98:1064-1071','10.1016/j.polymdegradstab.2013.01.010'],
+[2013,'O','AFM Observation of Polylactide Stereocomplex Edge-On Crystals in Thin Films','Marubayashi H, Nobuoka T, Iwamoto S, Takemura A, Iwata T','ACS Macro Letters','5:355-360','10.1021/mz400014s'],
+[2013,'O','Surface engineering of ultrafine cellulose nanofibers towards polymer nanocomposite materials','Fujisawa S, Saito T, Kimura S, Iwata T, Isogai A','Biomacromolecules','14:1541-1546','10.1021/bm400178m'],
+[2013,'O','Properties and enzymatic degradation of poly(acrylic acid) grafted polyhydroxyalkanoate films by plasma-initiated polymerization','Zhang J, Kasuya K, Takemura A, Isogai A, Iwata T','Polymer Degradation and Stability','98:1458-1464','10.1016/j.polymdegradstab.2013.04.010'],
+[2013,'O','Synthesis and characterization of cellulose, xylan and glucomannan derivatives and their applications (Japanese)','Enomoto-Rogers Y, Kamitakahara H, Takano T, Fundador NG, Iwata T','Kobunshi Ronbunshu','70(10):529-538','10.1295/koron.70.529'],
+[2013,'O','One-pot microbial production of isotactic P[(R)-2-hydroxybutyrate] and its copolymer with (R)-lactate','Matsumoto K, Terai S, Ishiyama A, Sun J, Kabe T, Nduko S, Iwata T, Taguchi S','Biomacromolecules','14:1913-1918','10.1021/bm400278j'],
+[2013,'O','Syntheses of poly(L-lactide)-block-xylan butyrate-block-poly(L-lactide) triblock copolymers and their properties','Enomoto-Rogers Y, Iwata T','Journal of Wood Science','59:489-498','10.1007/s10086-013-1367-x'],
+[2013,'O','Enhanced crystallization of poly(D-lactide) by xylan esters','Fundador NG, Iwata T','Polymer Degradation and Stability','98:2482-2487','10.1016/j.polymdegradstab.2013.06.013'],
+[2013,'O','Esterification of xylan and its application','Fundador NG, Enomoto-Rogers Y, Iwata T','ACS Symposium Series','1144:394-406','10.1021/bk-2013-1144.ch026'],
+[2013,'O','Biobased copolymers composed of L-lactic acid and side-chain-substituted lactic acids: Synthesis, structure, and properties','Marubayashi H, Asai S, Hikima T, Takata M, Iwata T','Macromolecular Chemistry and Physics','214:2546-2561','10.1002/macp.201300406'],
+// 2012
+[2012,'O','Acetylation and characterization of xylan from hardwood kraft pulp','Fundador NG, Enomoto-Rogers Y, Takemura A, Iwata T','Carbohydrate Polymers','87:170-176','10.1016/j.carbpol.2011.07.034'],
+[2012,'O','Characterization of hydroxyl groups of highly crystalline β-chitin under static tension detected by FT-IR','Saito Y, Iwata T','Carbohydrate Polymers','87:2154-2159','10.1016/j.carbpol.2011.10.044'],
+[2012,'O','Supramolecular morphology of two-step melt-spun poly(dioxanone) fibers','Kawahara Y, Nakayama A, Shioya M, Tsuji M, Yamane H, Iwata T','Journal of Material Sciences','47:1887-1892','10.1007/s10853-011-5977-7'],
+[2012,'O','Synthesis of xylan-graft-poly(L-lactide) copolymers via click chemistry and their thermal properties','Enomoto-Rogers Y, Iwata T','Carbohydrate Polymers','87(3):1933-1940','10.1016/j.carbpol.2011.09.092'],
+[2012,'O','Nano cellulose particles covered with block copolymer produced by solid mechano chemical polymerization','Sakaguchi M, Ohura T, Iwata T, Enomoto-Rogers Y','Polymer Degradation and Stability','97(3):257-263','10.1016/j.polymdegradstab.2011.12.022'],
+[2012,'O','Physical and structural effects of adding UHMW-P(3HB) to wild-type P(3HB)','Kabe T, Tsuge T, Kasuya K, Takemura A, Hikima T, Takata M, Iwata T','Macromolecules','45:1858-1865','10.1021/ma202285c'],
+[2012,'O','Processing, mechanical properties and structure analysis of melt-spun fibers of P(3HB)/UHMW-P(3HB) blend','Kabe T, Tsuge T, Hikima T, Takata M, Takemura A, Iwata T','ACS Symposium Series','1105:63-75','10.1021/bk-2012-1105.ch005'],
+[2012,'O','Block copolymer of microcrystalline cellulose and poly(methyl methacrylate) initiated by mechanically formed radicals','Sakaguchi M, Ohura T, Iwata T, Rogers Y, Fujiwara M, Watanabe O, Narita M','ACS Symposium Series','1107:133-147',''],
+[2012,'O','Syntheses and characterization of xylan esters','Fundador NGV, Enomoto-Rogers Y, Takemura A, Iwata T','Polymer','53:3885-3893','10.1016/j.polymer.2012.06.038'],
+[2012,'O','Mechanoanions Produced by Mechanical Fracture of Bacterial Cellulose: Ionic Nature of Glycosidic Linkage and Electrostatic Charging','Sakaguchi M, Makino M, Ohura T, Iwata T','Journal of Physical Chemistry','116:9872-9877','10.1021/jp306261k'],
+[2012,'O','Physical properties, structure analysis, and enzymatic degradation of PHBV films and fibers','Tanaka T, Iwata T','ACS Symposium Series','1114:171-185','10.1021/bk-2006-0939.ch004'],
+// 2011
+[2011,'O','Mechanical properties, structure analysis and enzymatic degradation of uniaxially cold-drawn P[(R)-3HB-co-4HB] films','Zhang J, Kasuya K, Hikima T, Takata M, Takemura A, Iwata T','Polymer Degradation and Stability','96:2130-2138','10.1016/j.polymdegradstab.2011.09.011'],
+[2011,'O','Analysis of functional group sited on multi-wall carbon nanotube surface','Yudianti R, Onggo H, Sudirman, Saito Y, Iwata T, Azuma J','The Open Materials Science Journal','5:230-235','10.2174/1874088X01105010242'],
+[2011,'O','Effects of reprocessing on the hygroscopic behavior of natural fiber/HDPE composites','Tajvidi M, Takemura A','Journal of Applied Polymer Science','122:1258-1267','10.1002/app.34252'],
+[2011,'O','Effect of pre-acid-hydrolysis treatment on morphology and properties of cellulose nanowhiskers from coconut husk','Fahma F, Iwamoto S, Hori N, Iwata T, Takemura A','Cellulose','18:443-450','10.1007/s10570-010-9480-0'],
+[2011,'O','Morphology, Dynamic Mechanical, and Electrical Properties of Bio-Based PTT Blends Part 1','Kobayashi T, Wood B, Blacman G, Takemura A','Journal of Applied Polymer Science','120:3519-3529','10.1002/app.33498'],
+[2011,'O','Morphology, Dynamic Mechanical, and Electrical Properties of Bio-Based PTT Blends Part 2','Kobayashi T, Wood B, Takemura A','Journal of Applied Polymer Science','','10.1002/app.34571'],
+[2011,'O','Structure and mechanical properties of wet-spun fibers made from natural cellulose nanofibers','Iwamoto S, Isogai A, Iwata T','Biomacromolecules','12:831-836','10.1021/bm101510r'],
+[2011,'O','Rheological Analysis of the Adhesion Surface with a Scanning Probe Microscope','Sakaguchi Y, Kosaka N, Hori N, Iwata T, Takemura A, Harada E','International Journal of Adhesion & Adhesives','31:1-8','10.1016/j.ijadhadh.2010.11.002'],
+[2011,'O','Crystallization, Morphology and Electrical properties of Bio-based PTT/PEEA/Ionomers Blends','Kobayashi T, Wood B, Takemura A','Journal of Applied Polymer Science','119:2714-2724','10.1002/app.32945'],
+[2011,'O','Evaluation of adhesive penetration with scanning laser microscopy and statistical analysis','Fujii Y, Hori N, Takemura A, Kamo S, Fukasawa F','Wood Industry','66(2):54-57',''],
+// REVIEWS & BOOKS
+// 2026
+[2026,'R','Polysaccharide-derived plastics for low-dielectric films in high-frequency electronics and transparent optical fibers','Fukata Y, Iwata T','Journal of Wood Science','(2026)',''],
+[2026,'R','多糖から通信機器用のプラスチックをつくる：高耐熱低誘電フィルム及び高強度光ファイバーの開発','Fukata Y, Iwata T','Glycoforum','29(1):A3','10.32285/glycoforum.29A3J'],
+[2026,'B','機能性リグニン材料の開発と展開 — 第9章 リグニン分解物からの高性能高分子材料の開発（共著）','Enomoto Y, Iwata T','シーエムシー出版（山田竜彦監修）','',''],
+[2026,'B','石油依存からの脱却と新たな資源循環','Iwata T','シーエムシー出版','',''],
+[2026,'R','海洋分解性を有する多糖類系バイオプラスチックの開発','Tanaka S, Yamashiro M, Seok JH','クリーンテクノロジー','36(4)',''],
+[2015,'R','Biodegradable and Bio-Based Polymers: Future Prospects of Eco-Friendly Plastics (Review)','Iwata T','Angewandte Chemie International Edition','54:3210-3215','10.1002/anie.201410732'],
+[2024,'R','Biodegradable plastics – marine and deep-sea biodegradation, recent advances (Review)','Iwata T','Polymer Degradation and Stability','(multiple)',''],
+[2023,'B','Marine Pollution Solutions through Biodegradable Plastics Development (Book Editor)','Iwata T (Ed.)','NTS Publishing','',''],
+[2023,'B','Microbial Polyester Fundamentals and Applications (Book Editor)','Iwata T (Ed.)','CMC Research','',''],
+[2020,'B','Bioplastics: Creation and Future – Perspectives (Book)','Iwata T, (ed.)','Chemical Dojin','(CSJ:34)',''],
+[2020,'B','イチからつくるプラスチック (Book for general public)','Iwata T, Kazuhiro U (Illus.)','Nohbunkyo','',''],
+[2019,'B','Enzymatic Polymerization towards Green Polymer Chemistry – Chapter: Sucrase as Catalyst','Kimura S, Iwata T','Springer','89-104',''],
+[2022,'R','Dry-jet wet spinning of β-1,3-glucan and α-1,3-glucan (Review)','Suzuki S, Togo A, Iwata T','Polymer Journal','','10.1038/s41428-021-00573-0'],
+[2020,'R','Recent developments in microbial polyester fiber and polysaccharide ester derivative research (Review)','Iwata T, Gan H, Togo A, Fukata Y','Polymer Journal','','10.1038/s41428-020-00404-8'],
+[2016,'R','In vitro synthesis of α-1,3-glucan using glucansucrase and conversion to high heat-resistant bioplastic (Review)','Kimura S, Iwata T','Cellulose Communications','24(3):129-133',''],
+[2014,'B','Frontlines of High-Performance Fibers – Chapter: Microbial Polyesters as Medical Fibers','Iwata T','CMC Publishing','140-147',''],
+[2013,'R','Toward High-Performance Microbial Polyesters (Review)','Iwata T','Journal of the Crystallographic Society of Japan','55:188-196',''],
+[2012,'R','New Developments in Bio-based and Biodegradable Polyesters (Review)','Iwata T','Kobunshi (High Polymers)','61(4):188-191',''],
+[2021,'R','Self-degradable enzyme-containing polylactic acid development (Review)','Huang Q, Kimura S, Iwata T','Latest Research and Development Trends in Marine Biodegradable Plastics','(2021)',''],
+// ---- 2025 ----
+[2025,'R','高性能な生分解性バイオマスプラスチックの創製と深海生分解性評価（前編）','Iwata T','ソフト・ドリンク技術資料','No.204:1-13',''],
+[2025,'R','時の言葉：生分解性バイオマスプラスチック研究者として','Iwata T','Resonare（リゾネイト）','Feb:24-25',''],
+[2025,'R','環境にやさしいプラスチックとは','Iwata T','実教 家庭科資料','No.74:8-12',''],
+[2025,'R','海洋生分解と深海生分解','Sakishio H, Iwata T','WEB Journal','31(1):7-11',''],
+[2025,'R','循環型バイオエコノミーシステムのための高性能生分解性バイオマスプラスチック開発','Iwata T','JST-CRDS報告書','pp.52-63',''],
+[2025,'R','微生物産生ポリエステルを用いた多孔質繊維の製造','Kabe T, Omura T, Tsujimoto S, Iwata T','リガクジャーナル','56(2):6-13',''],
+[2025,'R','循環型バイオエコノミーを考える','Iwata T','繊維学会誌','81(11):449',''],
+[2025,'R','結晶性カードラン誘導体の熱特性と繊維形成','Kabe T','Journal of Fiber Science and Technology','81(12):510-513',''],
+// ---- 2024 ----
+[2024,'B','ポリ乳酸の生産・成形加工・高機能化技術 第9章 酵素内包ポリ乳酸','Huang Q, Kimura S, Iwata T','情報機構（宇山浩・徐于懿監修）','ISBN: 978-4-7813-1764-9',''],
+[2024,'B','高分子の結晶化、延伸による高機能化 第9章 微生物産生ポリエステルの延伸技術','Kabe T, Iwata T','シーエムシー出版（斎藤拓監修）','ISBN: 978-4-7813-1794-6',''],
+[2024,'R','高性能な生分解性バイオマスプラスチックの創製と環境分解性評価','Iwata T','食品と容器','65:110-116',''],
+[2024,'B','高分子材料の分解制御技術 第7章・第11章','Enomoto Y, Fujie K, Iwata T, Huang Q, Kimura S','シーエムシー出版（粕谷健一監修）','ISBN: 978-4-7813-1795-3',''],
+[2024,'R','酵素内包海洋分解性プラスチックの開発','Huang Q, Kimura S, Iwata T','酵素工学ニュース','91:23-28',''],
+[2024,'R','生分解性バイオマスプラスチックの将来展望','Iwata T','JACI News Letter','88:2-3',''],
+[2024,'R','リグニン由来のバイオマスプラスチック','Enomoto Y, Iwata T','Cellulose Communications','31(2):34-38',''],
+[2024,'R','分解開始機能を有する夢の生分解性プラスチックの開発','Iwata T','化学と教育','6:224-227',''],
+[2024,'R','生分解性プラスチックは深海でも微生物により分解されることを実証','Iwata T','明日の食品産業','7&8:34-37',''],
+[2024,'R','生分解性プラスチックは深海でも微生物により分解される','Iwata T','バイオサイエンスとインダストリー（B&I）','82:483-485',''],
+[2024,'R','高性能な生分解性プラスチックの開発と深海生分解性評価（前編）','Iwata T','ソフト・ドリンク技術資料','203:1-18',''],
+[2024,'R','生分解性プラスチックは深海でも微生物により分解されることを実証','Iwata T','環境と計測技術','51(9):7-11',''],
+[2024,'R','問いを立てる！','Iwata T','バイオプラジャーナル','91:3',''],
+[2024,'R','ポリエチレングリコール修飾酵素の内包によるポリD乳酸の生分解性と機械的特性の向上','Huang Q, Kimura S, Iwata T','バイオプラジャーナル','91:12-17',''],
+[2024,'R','持続可能な社会の構築と環境保全に貢献する繊維の開発を目指して','Kabe T, Iwata T','繊維学会誌','80(12):435-441',''],
+// ---- 2023 ----
+[2023,'R','高性能・高機能な生分解性プラスチックの開発','Iwata T','バイオプラジャーナル','No.83:5-9',''],
+[2023,'R','産学連携の取り組み「ミドリムシの活用」','Iwata T','化学工学','87(2):2-5',''],
+[2023,'R','GXの観点から','Iwata T','繊維学会誌','79:47',''],
+[2023,'B','木の科学 基礎編 第7章 ヘミセルロース化学と木材由来循環プラスチック','Enomoto Y, Iwata T','日本木材学会編・改正出版','',''],
+[2023,'B','生分解性プラスチックの高機能化と応用（バイオマス材料・バイオプラスチック繊維開発章）','Enomoto Y, Iwata T','技術情報協会','',''],
+[2023,'R','ニゲランの生産とバイオマスプラスチック研究','Kamiji K, Togo A, Kimura S, Iwata T','アグリバイオ','7(8):692-696',''],
+[2023,'R','高性能生分解性プラスチックと将来展望','Iwata T','成形加工','35(3):78-81',''],
+[2023,'B','機能性フィルムにおける減容化・モノマテリアル・リサイクル・環境対応 2章4節 虫歯菌がつくる多糖から高耐熱性ポリマーの開発とフィルム化','Fukata Y, Kimura S, Iwata T','AndTech','',''],
+[2023,'R','生分解スイッチオン！','Iwata T','高分子','72(10):508-510',''],
+[2023,'R','ジバニリン酸由来の高耐熱性・生分解性バイオマスプラスチック','Enomoto Y, Iwata T','WEB Journal','2023',''],
+// ---- 2022 ----
+[2022,'R','ポストコロナ時代における繊維の活躍','Ogino K, Iwata T, Okurin S, Aranishi Y, Murase H','繊維学会誌','','10.2115/fiber.78.2'],
+[2022,'B','延伸による高分子の構造と物性制御 第3章第1節 微生物産生ポリエステルから高性能繊維の作製','Omura T, Iwata T','S&T出版','138-147',''],
+[2022,'R','海洋分解性繊維と生分解開始機能の開発','Tateiwa T, Omura T, Iwata T','材料の科学と工学','59(5):136-139',''],
+[2022,'R','生き物がつくるバイオマスプラスチックの高性能化を目指して','Iwata T','生物工学会誌','100(9):502-506','10.34565/seibutsukogaku.100.9_502'],
+[2022,'R','生分解開始機能を有する酵素内包生分解性プラスチックの開発','Huang Q, Kimura S, Iwata T','産業と科学','96(5):118-124',''],
+[2022,'R','多糖類を原料とした新規バイオマスプラスチック','Gan H, Iwata T','バイオプラスチック','',''],
+[2022,'R','高性能な生分解性プラスチックの創製と将来展望','Iwata T','クリーンテクノロジー','No.10',''],
+[2022,'R','生分解性バイオマスプラスチックの開発と将来展望','Iwata T','えねるみくす（日本エネルギー学会誌）','101(6):681',''],
+[2022,'B','海洋分解性繊維と生分解開始機能の付与（容器包装材料の環境対応とリサイクル技術 第1章第5節）','Tateiwa T, Huang Q, Iwata T','情報技術協会出版','',''],
+// ---- 2021 ----
+[2021,'R','α-1,3-glucan branched ester derivatives exhibiting high dimensional stability and thermo-formability','Fukata Y, Kimura S, Iwata T','高分子（KOBUNSHI, High Polymers Japan）','70(8):415',''],
+[2021,'R','多糖類からの高性能バイオマスプラスチックの創製','Togo A, Iwata T','塗装工学','56(10):389-399',''],
+[2021,'R','生分解開始機能を有する酵素内包生分解性プラスチックの開発','Huang Q, Kimura S, Iwata T','コンバーテック','Nov 2021',''],
+// ---- 2020 ----
+[2020,'B','Physical Properties and Structures of Novel Bio-Based Films and Fibers Derived from Paramylon Esters','Gan H, Iwata T','ACS Symposium Series (Sustainability & Green Polymer Chemistry Vol.2)','161-177','10.1021/bk-2020-1373.ch009'],
+[2020,'R','バイオマス由来多糖誘導体の合成と高性能バイオプラスチック','Enomoto Y, Iwata T','えねるみくす（日本エネルギー学会誌）','99(1):22-26',''],
+[2020,'R','高分子多糖類から高性能バイオマスプラスチックの創製とその応用','Iwata T, Tanaka S, Tanaka J','JATAFFジャーナル','8(5):19-24',''],
+[2020,'R','今、生分解性プラスチックに求められること！','Iwata T','包装技術','58(5):8-12',''],
+[2020,'R','SPring-8と繊維科学研究','Kabe T, Masunaga H, Iwata T','繊維学会誌','76(5):185-190',''],
+[2020,'R','生分解性プラスチックの現状と展望','Iwata T','マテリアルライフ学会誌','32(2):1-7',''],
+[2020,'R','ミドリムシがつくる多糖からなる新規バイオプラスチック','Gan H, Iwata T, Kabe T','マテリアルステージ','20(3):1-7',''],
+[2020,'R','生分解性プラスチックの現状と課題','Iwata T','粉体技術','12(7):36-41',''],
+[2020,'R','バイオプラスチックの現状と課題','Iwata T','バイオサイエンスとインダストリー（B&I）','78(5):442-447',''],
+[2020,'R','多糖の特徴を生かした新しい高性能バイオマスプラスチック','Fukata Y, Zhai W, Danjo T, Kimura S, Iwata T','WEB Journal','Sep:36-41',''],
+// ---- 2019 ----
+[2019,'R','バイオプラスチックの最新動向','Iwata T','バイオプラジャーナル','71:3',''],
+[2019,'B','次世代高分子開発 第9章第7節 多糖類からの高耐熱性バイオプラスチック','Iwata T, Kimura S','技術情報協会','',''],
+[2019,'R','自然環境で分解する繊維 — 微生物産生ポリエステル繊維の作製と酵素分解','Kabe T, Iwata T','繊維学会誌','75(3):162-168',''],
+[2019,'R','β-1,3-グルカントリエステル誘導体の基本物性と結晶弾性率','Gan H, Iwata T, Kabe T','Cellulose Communication','26(3):122-129',''],
+[2019,'R','プラスチックと人類の共存共栄を目指して','Iwata T','繊維学会誌','75(10):532-537',''],
+[2019,'B','環境対応マイクロプラスチック 第9章第7節','Kimura S, Iwata T','情報機構','',''],
+[2019,'B','生分解性プラスチックの材料と技術開発 第3編第2章第1節 多糖エステル誘導体','Togo A, Iwata T','NTS','',''],
+[2019,'B','生分解性プラスチックの環境設計ガイドライン','Iwata T, Abe H','シーエムシー出版','',''],
+// ---- 2018 ----
+[2018,'R','高分子多糖類からの高性能バイオプラスチック','Iwata T','応用糖質科学','8(2):110-116',''],
+[2018,'R','生分解性バイオマスプラスチックの進歩と展望','Iwata T','成形加工','30(11):564-568',''],
+[2018,'R','農業による生分解性プラスチック開発','Nagasawa T, Iwata T','アグリオ（時事通信社）','Issue 230',''],
+[2018,'R','生分解性プラスチックの生分解速度の制御','Iwata T','プラスチックスエージ','Dec:45-49',''],
+// ---- 2017 ----
+[2017,'R','バイオベースプラスチックの最近の進歩','Iwata T','高分子','66:73-78',''],
+[2017,'R','虫歯菌がつくる高分子多糖類からの高耐熱性バイオプラスチック','Iwata T, Puanglek S, Kimura S, Yoshida M','MATERIAL STAGE','16(10):52-54',''],
+[2017,'R','α-1,3-グルカンの試験管内酵素合成と高耐熱性バイオプラスチック化','Kimura S, Iwata T','バイオサイエンスとインダストリー（B&I）','75(2):144-145',''],
+[2017,'R','多糖類からのゼロ複屈折ポリマー','Danjo T, Iwata T','コンバーテック','Sep:62-65',''],
+[2017,'R','天然型および非天然型高分子多糖類からの高性能バイオマスプラスチック','Iwata T','プラスチックス','Oct 2017',''],
+[2017,'R','高分子多糖類が拓く新しいバイオプラスチックの世界','Iwata T','アグリバイオ','Nov:32-35',''],
+// ---- 2016 ----
+[2016,'R','Solvent effect on the one-pot heterogeneous synthesis of cardanol-bonded cellulosic bioplastic','Tanaka S, Iwata T, Iji M','Cellulose Communications','23:135-140',''],
+[2016,'R','虫歯菌酵素でバイオマスプラ合成','Iwata T','コンバーティック','Sep:22-24',''],
+// ---- 2015 ----
+[2015,'R','バイオマスプラスチックの最新研究動向','Iwata T','バイオインダストリー','Feb:5-6',''],
+[2015,'R','高分子多糖類からの高性能バイオマスプラスチックの創製','Iwata T','バイオインダストリー','Feb:36-43',''],
+[2015,'B','進化する医療用バイオベースマテリアル 第1章 バイオポリエステルの基礎物性','Iwata T','シーエムシー出版','13-20',''],
+[2015,'B','新たな木の時代 未来への道標 第7章 新素材の開発','Iwata T, Saito Y, Yano H','日本木材学会編・講談社','167-189',''],
+[2015,'B','セルロースナノファイバーの剛直性について','Iwamoto S, Iwata T, Endo T','技術情報協会','',''],
+[2015,'R','セルロースおよびキシラン誘導体の合成とその機能化','Enomoto Y, Uekohara H, Iwata T','Cellulose Communications','22:131-136',''],
+[2015,'R','環境に優しい生分解性素材の特性と加工技術','Tanaka T, Iwata T','月刊「加工技術」','50(9):7-18',''],
+[2015,'R','バイオプラスチックの新たな展開','Iwata T, Ishii D','日本接着学会誌','51:484-490',''],
+[2015,'R','高耐熱性・高加工性バイオマスプラスチックの開発','Ishii D, Iwata T','プラスチックエージ','Dec:62-67',''],
+// ---- 2014 ----
+[2014,'R','未利用バイオマスからの新規バイオベースプラスチック開発の取り組み','Iwata T, Tsuge T, Ishii D','オレオサイエンス','14:123-129',''],
+[2014,'R','天然多糖類および植物由来芳香族からの新規バイオベースプラスチックの開発','Enomoto Y, Danjo T, Ishii D, Iwata T','バイオプラジャーナル','53:12-17',''],
+[2014,'R','環境にやさしい繊維素材のこれから','Iwata T','繊維学会誌','70(9):512-515',''],
+// ---- 2013 ----
+[2013,'R','ヘミセルロースの有効利用を目指して','Iwata T, Fundador N, Enomoto Y','マテリアルステージ','12(10):1-3',''],
+[2013,'R','キシランおよびグルコマンナンのプラスチック材料化と応用','Iwata T','機能材料','8:3-8',''],
+[2013,'R','コンニャクグルコマンナンからのプラスチック開発','Iwata T, Danjo T, Omomo Y, Enomoto Y','プラスチック','11:17-21',''],
+[2013,'B','Polyhydroxyalkanoate, Bio-based Polymers (CMC Handbook)','Iwata T, Tsuge T, Taguchi S, Abe H, Tanaka T','CMC出版（日本のR&D情報ハンドブック）','71-85',''],
+// ---- 2012 ----
+[2012,'R','High-functionability of bio-based and biodegradable porous fibers','Iwata T','高分子 (High Polymer)','61(4):179',''],
+[2012,'R','キシランのプラスチック材料化','Enomoto Y, Fundador N, Iwata T','化学工学','57(4):21-25',''],
+[2012,'R','バイオポリエステルの高機能化','Iwata T','機能材料','32(2):29-36',''],
+[2012,'R','微生物産生ポリエステルの高機能化','Kabe T, Iwata T','プラスチックスエージ','58(12):78-83',''],
+[2012,'B','Polymer Science: A Comprehensive Reference – Chapter: Polyhydroxyalkanoates','Taguchi S, Iwata T, Abe H, Doi Y','Elsevier','157-182, ISBN: 978-0-08-087862-1',''],
+// ---- 2011 ----
+[2011,'R','バイオプラを訪ねて、東京大学・岩田研究室','Iwata T','バイオプラジャーナル','42:14-19',''],
+[2011,'R','微生物産生ポリエステルの高効率的生産と高性能化','Iwata T, Tsuge J','ケミカルエンジニアリング','56(6):59-65',''],
+];
+
+// ─────────────────────────────────────────────
+// AREA DEFINITIONS (4 main categories)
+// ─────────────────────────────────────────────
+const AREA_DEFS = {
+  'PHA':    { label: 'PHA・微生物産生ポリエステル', en: 'Microbial Polyesters (PHAs)', color: '#d95252' },
+  '多糖':   { label: '多糖誘導体', en: 'Polysaccharide Derivatives', color: '#3e92c4' },
+  '芳香族': { label: '芳香族ポリマー', en: 'Bio-based Aromatic Polymers', color: '#8c52c8' },
+  'その他': { label: 'その他', en: 'Others', color: '#38ac70' },
+};
+
+function getArea(title, journal) {
+  const t = (title + ' ' + journal).toLowerCase();
+  // 多糖 takes priority over PHA to avoid "polysaccharide...hydroxyl" misclassification
+  if (/curdlan|paramylon|glucan|xylan|glucomannan|dextran|nigeran|chitosan|chitin|pullulan|polysaccharide|cellulose|alginat|sophorose/.test(t)) return '多糖';
+  if (/polyhydroxyalk|p\(3hb|p\[.*3h[bvh]|pha\b|hydroxybutyrate|hydroxyvalerate|hydroxyhexanoate|hydroxyalkanoate|phbv|\b3hb\b|\b4hb\b|\b3hv\b|\b3hh\b/.test(t)) return 'PHA';
+  if (/vanill|ferulic|gallic|caffeic|aromatic poly|biphenyl poly|anthraquin|cardanol/.test(t)) return '芳香族';
+  return 'その他';
+}
+
+function getTags(title, journal, authors='', doi='') {
+  const t = (title + ' ' + journal).toLowerCase();
+  const tags = [];
+  // Biodegradation
+  if (/biodegradation|biodegradable/.test(t)) tags.push('生分解');
+  if (/marine|seawater/.test(t)) tags.push('海洋生分解');
+  if (/deep.?sea/.test(t)) tags.push('深海生分解');
+  if (/enzymatic degrad/.test(t)) tags.push('酵素分解');
+  // β-1,3-glucan / curdlan
+  if (/curdlan|paramylon|β-1,3-glucan|β.1.3.glucan/.test(t)) tags.push('β-1,3-グルカン');
+  // α-1,3-glucan
+  if (/α-1,3-glucan/.test(t)) tags.push('α-1,3-グルカン');
+  // α-1,4
+  if (/α-1,4-glucan|nigeran|α-1,3-alt/.test(t)) tags.push('α-1,4-グルカン');
+  // α-1,6
+  if (/α-1,6|pullulan|dextran|dextrin/.test(t)) tags.push('α-1,6-グルカン');
+  // β-1,2
+  if (/β-1,2-glucan|sophorose/.test(t)) tags.push('β-1,2-グルカン');
+  // Specific polysaccharides
+  if (/paramylon/.test(t)) tags.push('パラミロン');
+  if (/cellulose/.test(t)) tags.push('セルロース');
+  if (/chitin|chitosan/.test(t)) tags.push('キトサン');
+  if (/xylan/.test(t)) tags.push('キシラン');
+  if (/dextran|dextrin|α-1,6/.test(t)) tags.push('デキストラン');
+  if (/glucomannan/.test(t)) tags.push('グルコマンナン');
+  if (/alginate/.test(t)) tags.push('アルギン酸');
+  if (/nigeran/.test(t)) tags.push('ニゲラン');
+  // PHAs specific
+  if (/p3hb|p\(3hb\)(?!.co)/.test(t)) tags.push('P(3HB)');
+  if (/phbv|3hb-co-3hv/.test(t)) tags.push('PHBV');
+  if (/3hb-co-4hb/.test(t)) tags.push('P(3HB-co-4HB)');
+  if (/3hb-co-3hh/.test(t)) tags.push('P(3HB-co-3HH)');
+  if (/medium.chain|mcl.pha/.test(t)) tags.push('mcl-PHA');
+  // Aliphatic polyesters
+  if (/polylactide|poly.l.lact|plla|poly.d.lact|pdla|lactide/.test(t)) tags.push('PLA');
+  if (/stereocomplex/.test(t)) tags.push('ステレオコンプレックス');
+  if (/poly.butylene succinate(?!.co.adipate)|pbs(?!a)/.test(t)) tags.push('PBS');
+  if (/pbsa|poly.butylene succinate.co.adipate/.test(t)) tags.push('PBSA');
+  if (/pbat/.test(t)) tags.push('PBAT');
+  if (/poly.ethylene succinate/.test(t)) tags.push('PES');
+  if (/poly.dioxanone/.test(t)) tags.push('ポリジオキサノン');
+  // Aromatics
+  if (/divanillic|vanillic acid/.test(t)) tags.push('ジバニリン酸');
+  if (/divanillin(?! acid)/.test(t)) tags.push('ジバニリン');
+  if (/ferulic/.test(t)) tags.push('フェルラ酸');
+  if (/gallic/.test(t)) tags.push('ガリック酸');
+  if (/caffeic/.test(t)) tags.push('カフェ酸');
+  if (/lignin/.test(t)) tags.push('リグニン');
+  if (/polyamide/.test(t)) tags.push('ポリアミド');
+  if (/polyurethane/.test(t)) tags.push('ポリウレタン');
+  if (/polyketone|polyetherketone/.test(t)) tags.push('ポリケトン');
+  if (/vitrimer/.test(t)) tags.push('ビトリマー');
+  // Structural analysis
+  if (/crystal|x[- ]?ray|saxs|waxs|synchrotron/.test(t)) tags.push('結晶構造解析');
+  if (/nanofiber|cnf|cellulose nano/.test(t)) tags.push('セルロースナノファイバー');
+  // Fiber
+  if (/melt.spun|melt.spinning/.test(t)) tags.push('溶融紡糸');
+  if (/wet.spun|wet.spinning/.test(t)) tags.push('湿式紡糸');
+  if (/electrospun|electrospinning/.test(t)) tags.push('電界紡糸');
+  if (/air.jet|dry.jet/.test(t)) tags.push('エアジェット紡糸');
+  // Enzymes
+  if (/cutinase/.test(t)) tags.push('クチナーゼ');
+  if (/lipase/.test(t)) tags.push('リパーゼ');
+  if (/enzyme.embed|embed.*enzyme/.test(t)) tags.push('酵素内包');
+  if (/peg.?coat|pegylated enzyme/.test(t)) tags.push('PEG化酵素');
+  // Materials
+  if (/hydrogel/.test(t)) tags.push('ハイドロゲル');
+  if (/composite/.test(t)) tags.push('複合材料');
+  if (/blend/.test(t)) tags.push('ポリマーブレンド');
+  if (/graft/.test(t)) tags.push('グラフト共重合');
+  if (/block copolymer/.test(t)) tags.push('ブロック共重合');
+  if (/ionic liquid/.test(t)) tags.push('イオン液体');
+  if (/click chem/.test(t)) tags.push('クリック化学');
+  if (/dielectric|dissipation.factor|低誘電|high.frequenc/.test(t)) tags.push('低誘電');
+  if (/machine learning/.test(t)) tags.push('機械学習');
+  if (/microbead/.test(t)) tags.push('マイクロビーズ');
+  if (/waveguide|waveguiding/.test(t)) tags.push('光導波路');
+  if (/self.immolative/.test(t)) tags.push('自己分解型');
+  // Author-based tagging: Huang → enzyme-embedding research
+  if (/Huang/i.test(authors) && !tags.includes('酵素内包')) tags.push('酵素内包');
+  // DOI-specific overrides
+  if (doi === '10.1021/acsapm.4c03899') {
+    if (!tags.includes('α-1,6-グルカン')) tags.push('α-1,6-グルカン');
+    if (!tags.includes('デキストラン')) tags.push('デキストラン');
+    if (!tags.includes('キシラン')) tags.push('キシラン');
+  }
+  return tags;
+}
+
+function normalizeAuthors(str) {
+  return str
+    .split(',')
+    .map(a => a.trim()
+      .replace('Enomoto-Rogers Y', 'Enomoto Y')
+      .replace(/\bRogers Y\b/, 'Enomoto Y')
+      .replace('Iwata T (Ed.)', 'Iwata T')
+    )
+    .filter(a => a && !/^et\s+al\.?$/i.test(a) && !/^\(ed\.?\)$/i.test(a))
+    .join(', ');
+}
+
+// ─────────────────────────────────────────────
+// JOURNAL IMPACT FACTORS (approx. JCR 2023/24)
+// ─────────────────────────────────────────────
+// CiteScore 2023 (Scopus)
+const JOURNAL_CS = {
+  'Advanced Functional Materials': 29.0,
+  'Angewandte Chemie International Edition': 27.0,
+  'Nature Communications': 23.0,
+  'Science Advances': 16.0,
+  'Carbohydrate Polymers': 17.0,
+  'Bioresource Technology': 18.0,
+  'Green Chemistry': 16.0,
+  'Composites Science and Technology': 14.0,
+  'ACS Sustainable Chemistry & Engineering': 13.0,
+  'RSC Sustainability': 7.0,
+  'Polymer Degradation and Stability': 12.0,
+  'ACS Macro Letters': 9.5,
+  'ACS Sustainable Resource Management': 6.0,
+  'Biomacromolecules': 10.5,
+  'Macromolecules': 9.0,
+  'ACS Applied Polymer Materials': 8.5,
+  'International Journal of Molecular Sciences': 7.5,
+  'Frontiers in Bioengineering and Biotechnology': 7.5,
+  'Macromolecular Bioscience': 6.5,
+  'Frontiers in Fungal Biology': 5.0,
+  'Molecules': 6.5,
+  'Frontiers in Microbiology': 9.0,
+  'Advanced Powder Technology': 6.5,
+  'Cellulose': 7.5,
+  'European Polymer Journal': 7.5,
+  'Scientific Reports': 7.5,
+  'Polymer': 7.5,
+  'International Journal of Adhesion & Adhesives': 5.5,
+  'ACS Omega': 6.0,
+  'ACS Applied Engineering Materials': 5.5,
+  'Journal of Material Sciences': 6.0,
+  'Analytical Biochemistry': 5.5,
+  'Polymer Journal': 5.0,
+  'Journal of Physical Chemistry': 5.5,
+  'Journal of Applied Crystallography': 5.5,
+  'Biopolymers': 3.5,
+  'Macromolecular Chemistry and Physics': 4.5,
+  'Journal of Polymer Research': 4.0,
+  'MRS Communications': 4.0,
+  'Polymer International': 3.5,
+  'Journal of Applied Polymer Science': 4.5,
+  'Holzforschung': 3.5,
+  'Journal of Wood Science': 3.5,
+  'Bioscience, Biotechnology, and Biochemistry': 3.0,
+  'Journal of Electrostatics': 3.0,
+  'Emirates Journal of Food and Agriculture': 2.5,
+  'Journal of Fiber Science and Technology': 1.0,
+  'Fiber Science and Technology': 1.0,
+  'Kobunshi Ronbunshu': 0.5,
+  'Journal of the Adhesion Society of Japan': 0.3,
+};
+
+const JOURNAL_IF = {
+  // ── High-impact (2024 IF) ──
+  'Advanced Functional Materials': 18.0,
+  'Angewandte Chemie International Edition': 16.1,
+  'Nature Communications': 14.7,
+  'Science Advances': 11.7,
+  'Carbohydrate Polymers': 10.2,
+  'Bioresource Technology': 9.7,
+  'Green Chemistry': 9.8,
+  'Composites Science and Technology': 8.3,
+  'ACS Sustainable Chemistry & Engineering': 7.1,
+  'RSC Sustainability': 7.1,
+  'Polymer Degradation and Stability': 7.4,
+  // ── Mid-range ──
+  'ACS Macro Letters': 5.5,
+  'ACS Sustainable Resource Management': 5.8,
+  'Biomacromolecules': 5.8,
+  'Macromolecules': 5.4,
+  'ACS Applied Polymer Materials': 5.3,
+  'International Journal of Molecular Sciences': 4.9,
+  'Frontiers in Bioengineering and Biotechnology': 4.3,
+  'Macromolecular Bioscience': 4.4,
+  'Frontiers in Fungal Biology': 3.9,
+  'Molecules': 3.9,
+  'Frontiers in Microbiology': 4.0,
+  'Advanced Powder Technology': 4.1,
+  'Cellulose': 4.2,
+  'European Polymer Journal': 4.2,
+  'Scientific Reports': 3.8,
+  'Polymer': 4.0,
+  // ── Standard ──
+  'International Journal of Adhesion & Adhesives': 3.7,
+  'ACS Omega': 3.5,
+  'ACS Applied Engineering Materials': 3.5,
+  'Journal of Material Sciences': 3.5,
+  'Analytical Biochemistry': 3.5,
+  'Polymer Journal': 3.3,
+  'Journal of Physical Chemistry': 3.0,
+  'Journal of Applied Crystallography': 3.0,
+  'Biopolymers': 2.5,
+  'Macromolecular Chemistry and Physics': 2.6,
+  'Journal of Polymer Research': 2.9,
+  'MRS Communications': 2.5,
+  'Polymer International': 2.4,
+  'Journal of Applied Polymer Science': 2.5,
+  'Holzforschung': 2.0,
+  'Journal of Wood Science': 2.2,
+  'Bioscience, Biotechnology, and Biochemistry': 2.0,
+  // ── Lower ──
+  'Journal of Electrostatics': 1.5,
+  'Emirates Journal of Food and Agriculture': 1.2,
+  'Journal of Fiber Science and Technology': 0.6,
+  'Fiber Science and Technology': 0.6,
+  'Kobunshi Ronbunshu': 0.3,
+  'Journal of the Adhesion Society of Japan': 0.2,
+};
+
+// ─────────────────────────────────────────────
+// PROCESS DATA
+// ─────────────────────────────────────────────
+let _id = 1;
+const STORED = JSON.parse(localStorage.getItem('polymer_papers') || '[]');
+let FAVORITES = new Set(JSON.parse(localStorage.getItem('polymer_favs') || '[]'));
+
+const PAPERS = [...RAW, ...STORED].map(r => {
+  const auth = normalizeAuthors(r[3]);
+  return {
+    id: _id++,
+    year: r[0], type: r[1], title: r[2],
+    authors: auth,
+    journal: r[4], vol: r[5], doi: r[6],
+    area: getArea(r[2], r[4]),
+    tags: getTags(r[2], r[4], auth, r[6]),
+  };
+});
+
+const YEARS = [...new Set(PAPERS.map(p=>p.year))].sort();
+const ORIG = PAPERS.filter(p=>p.type==='O');
+
+// ─────────────────────────────────────────────
+// CHARTS
+// ─────────────────────────────────────────────
+let charts = {};
+function initCharts() {
+  const yearCounts = YEARS.map(y=>({
+    y,
+    orig: PAPERS.filter(p=>p.year===y&&p.type==='O').length,
+    rev:  PAPERS.filter(p=>p.year===y&&p.type!=='O').length,
+  }));
+  charts.yearly = new Chart(document.getElementById('chart-yearly'), {
+    type:'bar',
+    data:{
+      labels: YEARS,
+      datasets:[
+        {label:'原著論文', data:yearCounts.map(c=>c.orig), backgroundColor:'#1d4ed8', borderRadius:4},
+        {label:'総説・著書', data:yearCounts.map(c=>c.rev), backgroundColor:'#93c5fd', borderRadius:4},
+      ]
+    },
+    options:{
+      responsive:true,
+      plugins:{legend:{position:'top'}},
+      scales:{x:{stacked:true},y:{stacked:true,beginAtZero:true}},
+      onClick(_,els){
+        if(!els.length) return;
+        const yr = YEARS[els[0].index];
+        const ps = PAPERS.filter(p=>p.year==yr);
+        showDashSide(`📅 ${yr}年の論文（${ps.length}件）`, ps);
+      }
+    }
+  });
+
+  const areaCounts = {};
+  ORIG.forEach(p=>{ areaCounts[p.area]=(areaCounts[p.area]||0)+1; });
+  const areaKeys = Object.keys(AREA_DEFS);
+  charts.areas = new Chart(document.getElementById('chart-areas'),{
+    type:'doughnut',
+    data:{
+      labels: areaKeys.map(k=>AREA_DEFS[k].label),
+      datasets:[{data:areaKeys.map(k=>areaCounts[k]||0), backgroundColor:areaKeys.map(k=>AREA_DEFS[k].color), borderWidth:2, borderColor:'#fff'}]
+    },
+    options:{
+      responsive:true,
+      plugins:{legend:{position:'right',labels:{font:{size:11}}}},
+      onClick(_,els){
+        if(!els.length) return;
+        const areaKey = areaKeys[els[0].index];
+        const ps = ORIG.filter(p=>p.area===areaKey);
+        showDashSide(`🔬 ${AREA_DEFS[areaKey].label}（${ps.length}件）`, ps);
+      }
+    }
+  });
+
+  const areaList = Object.keys(AREA_DEFS);
+  charts.trend = new Chart(document.getElementById('chart-trend'),{
+    type:'bar',
+    data:{
+      labels:YEARS,
+      datasets:areaList.map(a=>({
+        label:AREA_DEFS[a].label,
+        data:YEARS.map(y=>ORIG.filter(p=>p.year===y&&p.area===a).length),
+        backgroundColor:AREA_DEFS[a].color+'cc',
+        borderColor:AREA_DEFS[a].color,
+        borderWidth:1,
+      }))
+    },
+    options:{
+      responsive:true,
+      scales:{x:{stacked:true},y:{stacked:true,beginAtZero:true}},
+      plugins:{legend:{position:'bottom',labels:{font:{size:11}}}},
+      onClick(_,els){
+        if(!els.length) return;
+        const yr = YEARS[els[0].index];
+        const ds = areaList[els[0].datasetIndex];
+        const ps = ORIG.filter(p=>p.year===yr&&(ds?p.area===ds:true));
+        const label = ds ? `${yr}年 / ${AREA_DEFS[ds].label}（${ps.length}件）` : `${yr}年（${ps.length}件）`;
+        showAnalysisSide(label, ps);
+      }
+    }
+  });
+}
+
+// ─────────────────────────────────────────────
+// UI HELPERS
+// ─────────────────────────────────────────────
+function makeAreaTag(area) {
+  const def = AREA_DEFS[area]||{color:'#22c55e'};
+  return `<span class="tag-area" style="background:${def.color}22;color:${def.color};border:1px solid ${def.color}55">${area==='多糖'?'多糖':area}</span>`;
+}
+function makeTypeBadge(type) {
+  const labels={O:'原著論文',R:'総説・解説',B:'著書'};
+  return `<span class="paper-type-badge type-${type}">${labels[type]||type}</span>`;
+}
+function makePaperCard(p) {
+  const isFav = FAVORITES.has(p.id);
+  const doiLink = p.doi?`<a class="doi-link" href="https://doi.org/${p.doi}" target="_blank" rel="noopener" onclick="event.stopPropagation()">DOI →</a>`:'';
+  const contentTags = p.tags.slice(0,4).map(t=>`<span class="tag-content">${t}</span>`).join('');
+  return `
+<div class="paper-card" onclick="openModal(${p.id})">
+  <div class="paper-header">
+    <span class="paper-year">${p.year}</span>
+    <div style="display:flex;gap:4px;align-items:center">${makeTypeBadge(p.type)}</div>
+  </div>
+  <div class="paper-title">${p.title}</div>
+  <div class="paper-authors">${p.authors}</div>
+  <div class="paper-journal">${p.journal}${p.vol?' · '+p.vol:''}</div>
+  <div class="paper-tags">${makeAreaTag(p.area)}${contentTags}</div>
+  <div class="paper-footer">
+    ${doiLink}
+    <button class="fav-btn${isFav?' saved':''}" title="${isFav?'お気に入り解除':'お気に入り追加'}" onclick="event.stopPropagation();toggleFav(${p.id},this)"><svg width="16" height="18" viewBox="0 0 16 18" fill="currentColor"><path d="M2 1a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v15.5a.5.5 0 0 1-.777.416L8 14.101l-5.223 2.815A.5.5 0 0 1 2 16.5V1z"/></svg></button>
+  </div>
+</div>`;
+}
+
+// ─────────────────────────────────────────────
+// STATS
+// ─────────────────────────────────────────────
+function updateStats() {
+  const orig = ORIG.length;
+  const reviews = PAPERS.filter(p=>p.type==='R'||p.type==='B').length;
+  const journals = new Set(ORIG.map(p=>p.journal)).size;
+  const authorSet = new Set();
+  ORIG.forEach(p=>p.authors.split(',').forEach(a=>{const n=a.trim();if(n.length>2)authorSet.add(n);}));
+  document.getElementById('s-total').textContent=PAPERS.length;
+  document.getElementById('s-orig').textContent=orig;
+  document.getElementById('s-reviews').textContent=reviews;
+  document.getElementById('s-journals').textContent=journals;
+  document.getElementById('s-authors').textContent=authorSet.size;
+  document.getElementById('h-total').textContent=PAPERS.length;
+  document.getElementById('h-orig').textContent=orig;
+  document.getElementById('h-journals').textContent=journals;
+}
+function goToTabType(tab, type) {
+  switchTab(tab);
+  const sel = document.getElementById('filter-type');
+  if (sel) { sel.value = type; filterPapers(); }
+}
+
+// ─────────────────────────────────────────────
+// PAPERS FILTER
+// ─────────────────────────────────────────────
+let showFavOnly = false;
+function toggleFavFilter() {
+  showFavOnly = !showFavOnly;
+  document.getElementById('btn-fav-filter').classList.toggle('active', showFavOnly);
+  filterPapers();
+}
+function filterPapers() {
+  const q = document.getElementById('search').value.toLowerCase();
+  const yr = document.getElementById('filter-year').value;
+  const tp = document.getElementById('filter-type').value;
+  const area = document.getElementById('filter-area').value;
+  const res = PAPERS.filter(p=>
+    (!showFavOnly || FAVORITES.has(p.id)) &&
+    (!activeTagFilter || p.tags.includes(activeTagFilter)) &&
+    (!q || p.title.toLowerCase().includes(q) || p.authors.toLowerCase().includes(q) ||
+          p.journal.toLowerCase().includes(q) || p.tags.some(t=>t.toLowerCase().includes(q))) &&
+    (!yr || p.year==yr) &&
+    (!tp || (tp==='RB' ? p.type==='R'||p.type==='B' : p.type===tp)) &&
+    (!area || p.area===area)
+  ).sort((a,b)=>b.year-a.year);
+  document.getElementById('paper-count').textContent=`${res.length}件の論文が見つかりました（総数${PAPERS.length}件）`;
+  document.getElementById('papers-grid').innerHTML=res.length?res.map(makePaperCard).join(''):'<div class="empty-state"><div>🔍</div>検索条件に一致する論文が見つかりませんでした</div>';
+}
+function clearFilters() {
+  document.getElementById('search').value='';
+  document.getElementById('filter-year').value='';
+  document.getElementById('filter-type').value='';
+  document.getElementById('filter-area').value='';
+  showFavOnly=false;
+  activeTagFilter=null;
+  document.getElementById('btn-fav-filter').classList.remove('active');
+  renderTagChips();
+  filterPapers();
+}
+
+// ─────────────────────────────────────────────
+// AREAS TAB
+// ─────────────────────────────────────────────
+function renderAreas() {
+  const areaCnt={};
+  ORIG.forEach(p=>{areaCnt[p.area]=(areaCnt[p.area]||0)+1;});
+  const maxC=Math.max(...Object.values(areaCnt));
+  document.getElementById('areas-grid').innerHTML=Object.keys(AREA_DEFS).map(k=>{
+    const def=AREA_DEFS[k];
+    const cnt=areaCnt[k]||0;
+    const preview=ORIG.filter(p=>p.area===k).slice(0,3);
+    return `<div class="area-card" onclick="showAreaPapers('${k}')">
+      <div class="area-header"><div class="area-dot" style="background:${def.color}"></div>
+        <div><div class="area-name" style="color:${def.color}">${def.label}</div><div class="area-name-en">${def.en}</div></div></div>
+      <div class="area-count" style="color:${def.color}">${cnt}<span style="font-size:14px;font-weight:400;color:#64748b"> 件</span></div>
+      <div class="area-bar"><div class="area-bar-fill" style="background:${def.color};width:${(cnt/maxC*100).toFixed(1)}%"></div></div>
+      <div class="area-papers-preview">${preview.map(p=>`<div class="area-paper-item">・${p.title}</div>`).join('')}</div>
+    </div>`;
+  }).join('');
+}
+function showAreaPapers(area) {
+  const papers=ORIG.filter(p=>p.area===area);
+  const def=AREA_DEFS[area];
+  const sec=document.getElementById('area-detail-section');
+  sec.style.display='block';
+  document.getElementById('area-detail-title').textContent=`${def.label} の論文一覧（${papers.length}件）`;
+  document.getElementById('area-papers-grid').innerHTML=papers.map(makePaperCard).join('');
+}
+
+// ─────────────────────────────────────────────
+// AUTHORS TAB
+// ─────────────────────────────────────────────
+const PALETTE=['#1d4ed8','#059669','#d97706','#8b5cf6','#ef4444','#0ea5e9','#ec4899','#f59e0b'];
+function renderAuthors(filter='') {
+  const aC={};
+  PAPERS.forEach(p=>p.authors.split(',').map(a=>a.trim()).filter(Boolean).forEach(a=>{
+    aC[a]=(aC[a]||0)+1;
+  }));
+  const fl=filter.toLowerCase();
+  const sorted=Object.keys(aC)
+    .filter(n=>!fl||n.toLowerCase().includes(fl))
+    .sort((a,b)=>a.localeCompare(b));
+  document.getElementById('authors-grid').innerHTML=sorted.map((name,i)=>{
+    const init=name.split(/[\s,]+/).filter(Boolean).slice(0,2).map(s=>s[0]).join('');
+    const col=PALETTE[i%PALETTE.length];
+    return `<div class="author-card" onclick="showAuthorPapers('${name.replace(/'/g,"\\'")}')">
+      <div class="author-avatar" style="background:${col}">${init}</div>
+      <div class="author-name">${name}</div>
+    </div>`;
+  }).join('');
+}
+function showAuthorPapers(name) {
+  const papers=PAPERS.filter(p=>p.authors.split(',').map(a=>a.trim()).includes(name));
+  document.getElementById('author-modal-title').textContent=`${name} の論文一覧（${papers.length}件）`;
+  document.getElementById('author-modal-grid').innerHTML=papers.map(makePaperCard).join('');
+  document.getElementById('author-modal').classList.remove('hidden');
+}
+
+// ─────────────────────────────────────────────
+// DASHBOARD SIDE PANEL
+// ─────────────────────────────────────────────
+function showDashSide(title, papers) {
+  document.getElementById('dash-side-title').textContent=title;
+  document.getElementById('dash-side-body').innerHTML=papers.length
+    ? papers.map(p=>`<div class="paper-card" onclick="openModal(${p.id})" style="margin-bottom:8px;cursor:pointer">
+        <div class="paper-header"><span class="paper-year">${p.year}</span>${makeTypeBadge(p.type)}</div>
+        <div class="paper-title" style="font-size:12px">${p.title}</div>
+        <div class="paper-authors" style="font-size:11px">${p.authors.substring(0,60)}${p.authors.length>60?'…':''}</div>
+        <div class="paper-journal" style="font-size:11px">${p.journal}</div>
+        <div class="paper-tags">${makeAreaTag(p.area)}</div>
+      </div>`).join('')
+    : '<div class="empty-state">論文が見つかりませんでした</div>';
+}
+function clearDashSide() {
+  document.getElementById('dash-side-title').textContent='論文を表示';
+  document.getElementById('dash-side-body').innerHTML='<div class="dash-side-placeholder">📊 チャートをクリックすると<br>論文が表示されます</div>';
+}
+
+// ─────────────────────────────────────────────
+// ANALYSIS SIDE PANEL
+// ─────────────────────────────────────────────
+function showAnalysisSide(title, papers) {
+  document.getElementById('analysis-side-title').textContent=title;
+  document.getElementById('analysis-side-body').innerHTML=papers.length
+    ? papers.map(p=>`<div class="paper-card" onclick="openModal(${p.id})" style="margin-bottom:8px;cursor:pointer">
+        <div class="paper-header"><span class="paper-year">${p.year}</span>${makeTypeBadge(p.type)}</div>
+        <div class="paper-title" style="font-size:12px">${p.title}</div>
+        <div class="paper-authors" style="font-size:11px">${p.authors.substring(0,60)}${p.authors.length>60?'…':''}</div>
+        <div class="paper-journal" style="font-size:11px">${p.journal}</div>
+      </div>`).join('')
+    : '<div style="text-align:center;color:var(--text-light);padding:20px">論文が見つかりませんでした</div>';
+}
+function clearAnalysisSide() {
+  document.getElementById('analysis-side-title').textContent='論文を表示';
+  document.getElementById('analysis-side-body').innerHTML='<div style="text-align:center;color:var(--text-light);padding:40px 20px;font-size:13px">棒グラフをクリックすると<br>論文が表示されます</div>';
+}
+
+// ─────────────────────────────────────────────
+// TAG CARDS (研究分野タブ)
+// ─────────────────────────────────────────────
+let activeTagCard=null;
+function renderTagCards() {
+  const tagCnt={};
+  ORIG.forEach(p=>p.tags.forEach(t=>{tagCnt[t]=(tagCnt[t]||0)+1;}));
+  const sorted=Object.entries(tagCnt).sort((a,b)=>b[1]-a[1]);
+  document.getElementById('tag-cards-grid').innerHTML=sorted.map(([tag,cnt])=>
+    `<div class="tag-card" id="tc-${tag.replace(/[^\w]/g,'_')}" onclick="showTagPapers('${tag.replace(/'/g,"\\'")}')">
+      ${tag}<span class="tag-card-count">(${cnt})</span>
+    </div>`
+  ).join('');
+}
+function showTagPapers(tag) {
+  const papers=ORIG.filter(p=>p.tags.includes(tag));
+  const sec=document.getElementById('tag-detail-section');
+  // Toggle
+  if(activeTagCard===tag){
+    activeTagCard=null;
+    sec.style.display='none';
+    document.querySelectorAll('.tag-card').forEach(el=>el.classList.remove('active'));
+    return;
+  }
+  activeTagCard=tag;
+  document.querySelectorAll('.tag-card').forEach(el=>el.classList.remove('active'));
+  const key=tag.replace(/[^\w]/g,'_');
+  const el=document.getElementById('tc-'+key);
+  if(el) el.classList.add('active');
+  document.getElementById('tag-detail-title').textContent=`🏷️ ${tag}（${papers.length}件）`;
+  document.getElementById('tag-papers-grid').innerHTML=papers.map(makePaperCard).join('');
+  sec.style.display='block';
+}
+
+// ─────────────────────────────────────────────
+// TAG CHIPS (論文一覧タブ)
+// ─────────────────────────────────────────────
+let activeTagFilter=null;
+function renderTagChips() {
+  const tagSet=new Set();
+  ORIG.forEach(p=>p.tags.forEach(t=>tagSet.add(t)));
+  const sorted=[...tagSet].sort();
+  document.getElementById('tag-chips-row').innerHTML=sorted.map(t=>
+    `<span class="tag-chip${activeTagFilter===t?' active':''}" onclick="selectTagChip('${t.replace(/'/g,"\\'")}')">🏷️ ${t}</span>`
+  ).join('');
+}
+function selectTagChip(tag) {
+  activeTagFilter = activeTagFilter===tag ? null : tag;
+  renderTagChips();
+  filterPapers();
+}
+
+// ─────────────────────────────────────────────
+// JOURNAL IF TABLE
+// ─────────────────────────────────────────────
+let jSortKey='count', jSortDesc=true;
+function renderJournalTable() {
+  const jC={};
+  ORIG.forEach(p=>{jC[p.journal]=(jC[p.journal]||0)+1;});
+  let rows=Object.entries(jC).map(([j,c])=>({j,c,ifv:JOURNAL_IF[j]??null,csv:JOURNAL_CS[j]??null}));
+  rows.sort((a,b)=>{
+    if(jSortKey==='count') return jSortDesc?b.c-a.c:a.c-b.c;
+    if(jSortKey==='if'){const av=a.ifv??-1,bv=b.ifv??-1;return jSortDesc?bv-av:av-bv;}
+    if(jSortKey==='cs'){const av=a.csv??-1,bv=b.csv??-1;return jSortDesc?bv-av:av-bv;}
+    return jSortDesc?b.j.localeCompare(a.j):a.j.localeCompare(b.j);
+  });
+  document.getElementById('journal-tbody').innerHTML=rows.map(({j,c,ifv,csv})=>{
+    const dash='<span style="color:#94a3b8;font-size:12px">—</span>';
+    const ifBadge=ifv!==null?`<span class="${ifv>=8?'if-high':ifv>=4?'if-mid':'if-low'}">${ifv.toFixed(1)}</span>`:dash;
+    const csBadge=csv!==null?`<span class="${csv>=12?'if-high':csv>=6?'if-mid':'if-low'}">${csv.toFixed(1)}</span>`:dash;
+    const esc=j.replace(/'/g,"\\'");
+    return `<tr style="cursor:pointer" onclick="showJournalPapers('${esc}')"><td>${j}</td><td style="text-align:center;font-weight:600">${c}</td><td style="text-align:center">${ifBadge}</td><td style="text-align:center">${csBadge}</td></tr>`;
+  }).join('');
+}
+function sortJournals(key) {
+  if(jSortKey===key) jSortDesc=!jSortDesc; else { jSortKey=key; jSortDesc=true; }
+  // Update arrow indicators
+  ['name','count','if','cs'].forEach(k=>{
+    const arrow=document.getElementById('jth-'+k+'-arrow');
+    const th=document.getElementById('jth-'+k);
+    if(!arrow||!th) return;
+    if(k===jSortKey){ th.style.color='var(--primary)'; arrow.textContent=jSortDesc?'↓':'↑'; }
+    else { th.style.color=''; arrow.textContent='↕'; }
+  });
+  renderJournalTable();
+}
+function showJournalPapers(journal) {
+  const papers = ORIG.filter(p=>p.journal===journal).sort((a,b)=>b.year-a.year);
+  document.getElementById('journal-side-title').textContent=`${journal}（${papers.length}件）`;
+  document.getElementById('journal-side-body').innerHTML=papers.map(makePaperCard).join('');
+  // highlight active row
+  document.querySelectorAll('#journal-tbody tr').forEach(tr=>{
+    tr.style.background = tr.querySelector('td')?.textContent===journal ? 'var(--bg)' : '';
+  });
+}
+
+// ─────────────────────────────────────────────
+// FAVORITES
+// ─────────────────────────────────────────────
+function toggleFav(id, btn) {
+  if(FAVORITES.has(id)) { FAVORITES.delete(id); btn.classList.remove('saved'); }
+  else { FAVORITES.add(id); btn.classList.add('saved'); }
+  localStorage.setItem('polymer_favs', JSON.stringify([...FAVORITES]));
+}
+
+// ─────────────────────────────────────────────
+// ADD PAPER
+// ─────────────────────────────────────────────
+function openAddModal() { document.getElementById('add-modal').classList.remove('hidden'); }
+function savePaper() {
+  const yr=parseInt(document.getElementById('add-year').value);
+  const tp=document.getElementById('add-type').value;
+  const ti=document.getElementById('add-title').value.trim();
+  const au=document.getElementById('add-authors').value.trim();
+  const jo=document.getElementById('add-journal').value.trim();
+  const vo=document.getElementById('add-vol').value.trim();
+  const doi=document.getElementById('add-doi').value.trim();
+  if(!yr||!ti||!au||!jo){alert('年・タイトル・著者・ジャーナルは必須です');return;}
+  const stored=JSON.parse(localStorage.getItem('polymer_papers')||'[]');
+  stored.push([yr,tp,ti,au,jo,vo,doi]);
+  localStorage.setItem('polymer_papers',JSON.stringify(stored));
+  document.getElementById('add-modal').classList.add('hidden');
+  alert('保存しました。ページを再読み込みすると反映されます。');
+}
+
+// ─────────────────────────────────────────────
+// MODAL
+// ─────────────────────────────────────────────
+function openModal(id) {
+  const p=PAPERS.find(x=>x.id===id);
+  if(!p) return;
+  document.getElementById('author-modal').classList.add('hidden');
+  document.getElementById('modal-year-badge').innerHTML=`<span class="paper-year">${p.year}</span> ${makeTypeBadge(p.type)}`;
+  document.getElementById('modal-title').textContent=p.title;
+  document.getElementById('modal-authors').textContent=p.authors;
+  document.getElementById('modal-journal').textContent=p.journal;
+  document.getElementById('modal-vol').textContent=p.vol||'—';
+  document.getElementById('modal-year').textContent=p.year;
+  document.getElementById('modal-areas-tags').innerHTML=makeAreaTag(p.area);
+  document.getElementById('modal-content-tags').innerHTML=p.tags.map(t=>`<span class="tag-content">${t}</span>`).join(' ')||'—';
+  document.getElementById('modal-doi-section').innerHTML=p.doi
+    ?`<a class="modal-doi-btn" href="https://doi.org/${p.doi}" target="_blank" rel="noopener">🔗 出版社ページを開く (DOI: ${p.doi})</a>`:'';
+  document.getElementById('modal').classList.remove('hidden');
+}
+function closeModal(e){if(e.target===document.getElementById('modal'))document.getElementById('modal').classList.add('hidden');}
+
+// ─────────────────────────────────────────────
+// TAB SWITCH
+// ─────────────────────────────────────────────
+function switchTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
+  document.querySelectorAll('.tab-content').forEach(c=>c.classList.toggle('active',c.id==='tab-'+tab));
+  if(tab==='network') buildNetwork();
+}
+
+// ─────────────────────────────────────────────
+// D3 NETWORK
+// ─────────────────────────────────────────────
+let networkBuilt=false;
+function buildNetwork() {
+  const svg=document.getElementById('network-svg');
+  if(!svg||typeof d3==='undefined') return;
+  const fromY=parseInt(document.getElementById('net-year-from').value)||0;
+  const toY=parseInt(document.getElementById('net-year-to').value)||9999;
+  const areaF=document.getElementById('net-area').value;
+  const pool=ORIG.filter(p=>p.year>=fromY&&p.year<=toY&&(!areaF||p.area===areaF)).slice(0,120);
+  if(!pool.length){svg.innerHTML='<text x="50%" y="50%" fill="#94a3b8" text-anchor="middle" dominant-baseline="middle" font-size="16">表示する論文がありません</text>';return;}
+
+  const PI=/Iwata T|Iwata,|岩田/;
+  const edgeMap={};
+  for(let i=0;i<pool.length;i++){
+    const ai=pool[i].authors.split(',').map(a=>a.trim()).filter(a=>!PI.test(a)&&a.length>2);
+    for(let j=i+1;j<pool.length;j++){
+      const aj=pool[j].authors.split(',').map(a=>a.trim()).filter(a=>!PI.test(a)&&a.length>2);
+      let w=0;
+      ai.forEach(a=>{if(aj.includes(a))w+=1.5;});
+      if(pool[i].area===pool[j].area) w+=0.5;
+      if(w>=2){const key=`${i}-${j}`;edgeMap[key]={s:i,t:j,w};}
+    }
+  }
+
+  // Limit edges per node
+  const nodeEdges={};
+  Object.values(edgeMap).sort((a,b)=>b.w-a.w).forEach(e=>{
+    nodeEdges[e.s]=(nodeEdges[e.s]||[]);
+    nodeEdges[e.t]=(nodeEdges[e.t]||[]);
+    if(nodeEdges[e.s].length<8&&nodeEdges[e.t].length<8){
+      nodeEdges[e.s].push(e);nodeEdges[e.t].push(e);
+    }
+  });
+  const usedEdges=new Set();
+  Object.values(nodeEdges).forEach(arr=>arr.forEach(e=>usedEdges.add(e)));
+
+  const W=svg.clientWidth||900, H=620;
+  d3.select(svg).selectAll('*').remove();
+  const svgD3=d3.select(svg).attr('width',W).attr('height',H);
+  const g=svgD3.append('g');
+  svgD3.call(d3.zoom().scaleExtent([0.3,4]).on('zoom',ev=>g.attr('transform',ev.transform)));
+
+  const minYr=Math.min(...pool.map(p=>p.year));
+  const maxYr=Math.max(...pool.map(p=>p.year));
+  const yearRange=Math.max(maxYr-minYr,1);
+  const links=[...usedEdges].map(e=>({source:e.s,target:e.t,w:e.w}));
+  // エッジを持つノードのみ表示（孤立ノードは除外して飛び散りを防ぐ）
+  const connectedIds=new Set(links.flatMap(e=>[e.source,e.target]));
+  const nodes=pool
+    .map((p,i)=>({id:i,p,r:Math.max(5,Math.min(14,(JOURNAL_IF[p.journal]||2)*0.7))}))
+    .filter(n=>connectedIds.has(n.id));
+
+  const sim=d3.forceSimulation(nodes)
+    .force('link',d3.forceLink(links).id(d=>d.id).distance(d=>60/d.w).strength(0.6))
+    .force('charge',d3.forceManyBody().strength(-50))
+    .force('center',d3.forceCenter(W/2,H/2))
+    .force('x',d3.forceX(W/2).strength(0.06))
+    .force('y',d3.forceY(H/2).strength(0.06))
+    .force('collision',d3.forceCollide(d=>d.r+4));
+
+  const link=g.append('g').selectAll('line').data(links).join('line')
+    .attr('stroke','#94a3b8').attr('stroke-width',d=>Math.min(d.w,4)*0.7).attr('stroke-opacity',0.6);
+
+  const tip=document.getElementById('net-tooltip');
+  const node=g.append('g').selectAll('circle').data(nodes).join('circle')
+    .attr('r',d=>d.r+2)
+    .attr('fill',d=>{
+      const base=AREA_DEFS[d.p.area]?.color||'#22c55e';
+      const opacity=0.35+0.65*((d.p.year-minYr)/yearRange);
+      const hex=Math.round(opacity*255).toString(16).padStart(2,'0');
+      return base+hex;
+    })
+    .attr('stroke','#ffffff').attr('stroke-width',2)
+    .attr('cursor','pointer')
+    .on('mouseover',(ev,d)=>{
+      tip.style.display='block';
+      tip.innerHTML=`<strong>${d.p.title.substring(0,80)}…</strong><br>${d.p.authors.substring(0,60)}…<br>${d.p.journal} (${d.p.year})`;
+    })
+    .on('mousemove',ev=>{tip.style.left=(ev.clientX+12)+'px';tip.style.top=(ev.clientY-10)+'px';})
+    .on('mouseout',()=>{tip.style.display='none';})
+    .on('click',(_,d)=>openModal(d.p.id))
+    .call(d3.drag()
+      .on('start',(ev,d)=>{if(!ev.active)sim.alphaTarget(0.3).restart();d.fx=d.x;d.fy=d.y;})
+      .on('drag',(ev,d)=>{d.fx=ev.x;d.fy=ev.y;})
+      .on('end',(ev,d)=>{if(!ev.active)sim.alphaTarget(0);d.fx=null;d.fy=null;})
+    );
+
+  sim.on('tick',()=>{
+    nodes.forEach(d=>{
+      d.x=Math.max(d.r+4,Math.min(W-d.r-4,d.x));
+      d.y=Math.max(d.r+4,Math.min(H-d.r-4,d.y));
+    });
+    link.attr('x1',d=>d.source.x).attr('y1',d=>d.source.y).attr('x2',d=>d.target.x).attr('y2',d=>d.target.y);
+    node.attr('cx',d=>d.x).attr('cy',d=>d.y);
+  });
+
+  // Legend
+  document.getElementById('net-legend').innerHTML=
+    Object.entries(AREA_DEFS).map(([k,v])=>
+      `<span class="legend-item"><span class="legend-dot" style="background:${v.color}"></span>${v.label}</span>`
+    ).join('')+
+    `<span class="legend-item" style="margin-left:12px;border-left:1px solid #334155;padding-left:12px">
+      <span style="display:inline-flex;gap:6px;align-items:center">
+        <svg width="28" height="14"><circle cx="5" cy="7" r="4" fill="#94a3b8"/><circle cx="18" cy="7" r="7" fill="#94a3b8"/></svg>
+        バブルサイズ = IF（インパクトファクター）
+      </span>
+    </span>`+
+    `<span class="legend-item" style="margin-left:8px">
+      <span style="display:inline-flex;gap:6px;align-items:center">
+        <span style="display:inline-block;width:40px;height:10px;background:linear-gradient(to right,rgba(59,130,246,0.3),rgba(59,130,246,1));border-radius:3px"></span>
+        色の濃さ = 発表年（濃い = 新しい）
+      </span>
+    </span>`;
+}
+
+// ─────────────────────────────────────────────
+// INIT
+// ─────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded',()=>{
+  const yrSel=document.getElementById('filter-year');
+  YEARS.slice().reverse().forEach(y=>{const o=document.createElement('option');o.value=y;o.textContent=y+'年';yrSel.appendChild(o);});
+
+  const areaSel=document.getElementById('filter-area');
+  Object.entries(AREA_DEFS).forEach(([k,v])=>{const o=document.createElement('option');o.value=k;o.textContent=v.label;areaSel.appendChild(o);});
+
+  // Network year selectors
+  ['net-year-from','net-year-to'].forEach(id=>{
+    const sel=document.getElementById(id);
+    YEARS.forEach(y=>{const o=document.createElement('option');o.value=y;o.textContent=y+'年';sel.appendChild(o);});
+  });
+  // Network area selector
+  const netArea=document.getElementById('net-area');
+  Object.entries(AREA_DEFS).forEach(([k,v])=>{const o=document.createElement('option');o.value=k;o.textContent=v.label;netArea.appendChild(o);});
+
+  updateStats();
+  initCharts();
+  renderTagChips();
+  filterPapers();
+  renderAreas();
+  renderTagCards();
+  renderAuthors();
+  renderJournalTable();
+
+  ['search','filter-year','filter-type','filter-area'].forEach(id=>document.getElementById(id).addEventListener('input',filterPapers));
+  document.querySelectorAll('.tab-btn').forEach(btn=>btn.addEventListener('click',()=>switchTab(btn.dataset.tab)));
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'){['modal','add-modal','author-modal'].forEach(id=>document.getElementById(id).classList.add('hidden'));}});
+});
+</script>
+</body>
+</html>
