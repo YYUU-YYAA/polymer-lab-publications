@@ -503,7 +503,7 @@ main { max-width: 1400px; margin: 0 auto; padding: 28px 24px 60px; }
       <!-- 操作カード -->
       <div class="stat-card action-card" style="flex-direction:column;align-items:stretch;gap:7px;cursor:default">
         <button class="btn-add-paper" onclick="openAddModal()">
-          <span style="font-size:16px;font-weight:400">＋</span>論文を追加する
+          ＋ 論文を追加
         </button>
         <button class="btn-gh-push hidden" id="btn-gh-push" onclick="deployToGitHub()">
           🚀 <span id="gh-push-count">0</span>件をGitHubに反映
@@ -1024,13 +1024,13 @@ const RAW = [
 // ---- 2022 ----
 [2022,'R','ポストコロナ時代における繊維の活躍','Ogino K, Iwata T, Okurin S, Aranishi Y, Murase H','繊維学会誌','','10.2115/fiber.78.2'],
 [2022,'B','延伸による高分子の構造と物性制御 第3章第1節 微生物産生ポリエステルから高性能繊維の作製','Omura T, Iwata T','S&T出版','138-147',''],
-[2022,'R','海洋分解性繊維と生分解開始機能の開発','Tateiwa T, Omura T, Iwata T','材料の科学と工学','59(5):136-139',''],
+[2022,'R','海洋分解性繊維と生分解開始機能の開発','Tateiwa J, Omura T, Iwata T','材料の科学と工学','59(5):136-139',''],
 [2022,'R','生き物がつくるバイオマスプラスチックの高性能化を目指して','Iwata T','生物工学会誌','100(9):502-506','10.34565/seibutsukogaku.100.9_502'],
 [2022,'R','生分解開始機能を有する酵素内包生分解性プラスチックの開発','Huang Q, Kimura S, Iwata T','産業と科学','96(5):118-124',''],
 [2022,'R','多糖類を原料とした新規バイオマスプラスチック','Gan H, Iwata T','バイオプラスチック','',''],
 [2022,'R','高性能な生分解性プラスチックの創製と将来展望','Iwata T','クリーンテクノロジー','No.10',''],
 [2022,'R','生分解性バイオマスプラスチックの開発と将来展望','Iwata T','えねるみくす（日本エネルギー学会誌）','101(6):681',''],
-[2022,'B','海洋分解性繊維と生分解開始機能の付与（容器包装材料の環境対応とリサイクル技術 第1章第5節）','Tateiwa T, Huang Q, Iwata T','情報技術協会出版','',''],
+[2022,'B','海洋分解性繊維と生分解開始機能の付与（容器包装材料の環境対応とリサイクル技術 第1章第5節）','Tateiwa J, Huang Q, Iwata T','情報技術協会出版','',''],
 // ---- 2021 ----
 [2021,'R','α-1,3-glucan branched ester derivatives exhibiting high dimensional stability and thermo-formability','Fukata Y, Kimura S, Iwata T','高分子（KOBUNSHI, High Polymers Japan）','70(8):415',''],
 [2021,'R','多糖類からの高性能バイオマスプラスチックの創製','Togo A, Iwata T','塗装工学','56(10):389-399',''],
@@ -1106,7 +1106,7 @@ const RAW = [
 // ─────────────────────────────────────────────
 const AREA_DEFS = {
   'PHA':    { label: 'PHA・微生物産生ポリエステル', en: 'Microbial Polyesters (PHAs)', color: '#d95252' },
-  '多糖':   { label: '多糖誘導体', en: 'Polysaccharide Derivatives', color: '#3e92c4' },
+  '多糖':   { label: '多糖', en: 'Polysaccharides', color: '#3e92c4' },
   '芳香族': { label: '芳香族ポリマー', en: 'Bio-based Aromatic Polymers', color: '#8c52c8' },
   'その他': { label: 'その他', en: 'Others', color: '#38ac70' },
 };
@@ -1220,6 +1220,7 @@ function normalizeAuthors(str) {
       .replace('Enomoto-Rogers Y', 'Enomoto Y')
       .replace(/\bRogers Y\b/, 'Enomoto Y')
       .replace('Iwata T (Ed.)', 'Iwata T')
+      .replace(/\bTateiwa T\b/, 'Tateiwa J')
     )
     .filter(a => a && !/^et\s+al\.?$/i.test(a) && !/^\(ed\.?\)$/i.test(a))
     .join(', ');
@@ -1344,16 +1345,24 @@ const JOURNAL_IF = {
 // ─────────────────────────────────────────────
 let _id = 1;
 const STORED = JSON.parse(localStorage.getItem('polymer_papers') || '[]');
+const PATCHES = JSON.parse(localStorage.getItem('polymer_patches') || '[]');
 let FAVORITES = new Set(JSON.parse(localStorage.getItem('polymer_favs') || '[]'));
 
 function makeEntry(r, isStored) {
-  const auth = normalizeAuthors(r[3]);
+  let yr=r[0], tp=r[1], ti=r[2], au=r[3], jo=r[4], vo=r[5]||'', doi_=r[6]||'';
+  let isPatch = false;
+  if (!isStored && PATCHES.length) {
+    const key = doi_ || (yr + '|' + ti);
+    const patch = PATCHES.find(p => p._key === key);
+    if (patch) { yr=patch.year; tp=patch.type; ti=patch.title; au=patch.authors; jo=patch.journal; vo=patch.vol||''; doi_=patch.doi||''; isPatch=true; }
+  }
+  const auth = normalizeAuthors(au);
   return {
-    id: _id++, year: r[0], type: r[1], title: r[2],
-    authors: auth, journal: r[4], vol: r[5], doi: r[6],
-    area: getArea(r[2], r[4]),
-    tags: getTags(r[2], r[4], auth, r[6]),
-    isStored,
+    id: _id++, year: yr, type: tp, title: ti,
+    authors: auth, journal: jo, vol: vo, doi: doi_,
+    area: getArea(ti, jo),
+    tags: getTags(ti, jo, auth, doi_),
+    isStored, isPatch,
   };
 }
 const PAPERS = [
