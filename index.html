@@ -1179,7 +1179,7 @@ function getArea(title, journal) {
   // (例: "roles of polysaccharides" を含むリグニン論文の誤分類を防ぐ)
   if (/\blignin\b|リグニン/.test(t)) return '芳香族';
   // 多糖 takes priority over PHA to avoid "polysaccharide...hydroxyl" misclassification
-  if (/curdlan|paramylon|glucan|xylan|glucomannan|dextran|nigeran|chitosan|chitin|pullulan|polysaccharide|cellulose|alginat|sophorose|多糖|セルロース|キチン|キトサン|アルギン酸|デキストラン|プルラン|グルコマンナン|パラミロン|カードラン|ニゲラン/.test(t)) return '多糖';
+  if (/curdlan|paramylon|glucan|xylan|glucomannan|dextran|dextrin|nigeran|chitosan|chitin|pullulan|polysaccharide|cellulose|alginat|sophorose|多糖|セルロース|キチン|キトサン|アルギン酸|デキストラン|デキストリン|プルラン|グルコマンナン|パラミロン|カードラン|ニゲラン/.test(t)) return '多糖';
   if (/polyhydroxyalk|p\(3hb|p\[.*3h[bvh]|pha\b|hydroxybutyrate|hydroxyvalerate|hydroxyhexanoate|hydroxyalkanoate|phbv|\b3hb\b|\b4hb\b|\b3hv\b|\b3hh\b/.test(t)) return 'PHA';
   if (/vanill|ferulic|gallic|caffeic|aromatic poly|biphenyl poly|anthraquin|cardanol|ジバニリン|フェルラ酸|ガリック酸|カフェ酸/.test(t)) return '芳香族';
   return 'その他';
@@ -2224,9 +2224,13 @@ async function downloadMergedHTML() {
 }
 
 let _editingPaperTitle = null; // 編集中の論文タイトル（特定キー）
+let _editingPaperIsRaw = false;
+let _editingPaperKey = null;
 
 function openAddModal() {
   _editingPaperTitle = null;
+  _editingPaperIsRaw = false;
+  _editingPaperKey = null;
   document.querySelector('#add-modal .modal-title').textContent = '＋ 新しい論文を追加';
   ['add-year','add-title','add-authors','add-journal','add-vol','add-doi'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('add-type').value = 'O';
@@ -2399,7 +2403,7 @@ const AI_CONCEPTS = {
   'PHA':        ['pha','polyhydroxyalk','p(3hb','phbv','phb','php','phbh','polyhydroxy','microbial polyester','poly(3-hydroxy'],
   '微生物':     ['bacteria','microbial','ferment','biosynthes','bacterial','microorganism'],
   '生分解':     ['biodegradable','biodegradation','decompos','compost','degradable'],
-  '多糖':       ['polysaccharide','cellulose','chitin','chitosan','glucan','pullulan','curdlan','dextran','xylan','alginate','nigeran','glucomannan','sophorose'],
+  '多糖':       ['polysaccharide','cellulose','chitin','chitosan','glucan','pullulan','curdlan','dextran','dextrin','xylan','alginate','nigeran','glucomannan','sophorose'],
   'セルロース': ['cellulose','bacterial cellulose','nanocellulose','microfibrillated'],
   'キチン':     ['chitin','chitosan','n-acetyl'],
   'プルラン':   ['pullulan'],
